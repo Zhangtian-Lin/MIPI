@@ -21,9 +21,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "Docker Desktop is installed but its Linux engine is not ready. Start Docker Desktop and retry."
 }
 
-docker compose -f $composeFile up -d --wait
+docker compose -f $composeFile up -d --wait postgres redis minio
 if ($LASTEXITCODE -ne 0) {
     throw "Docker Compose could not start the local infrastructure."
+}
+
+docker compose -f $composeFile run --rm minio-init
+if ($LASTEXITCODE -ne 0) {
+    throw "MinIO is running, but the local object-storage bucket could not be initialized."
 }
 
 docker compose -f $composeFile ps
