@@ -1,0 +1,84 @@
+version: 1
+status: draft
+sources:
+  - source_id: SRC-MY-MIDA
+    name: Malaysian Investment Development Authority
+    owner: MIDA
+    base_url: https://www.mida.gov.my/
+    source_grade_default: S2
+    languages: [en, ms]
+    authority_scope: [investment, manufacturing, services, incentives]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-MITI
+    name: Ministry of Investment, Trade and Industry
+    owner: MITI
+    base_url: https://www.miti.gov.my/
+    source_grade_default: S2
+    languages: [en, ms]
+    authority_scope: [industry_policy, trade_policy, investment_policy]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-MDEC
+    name: Malaysia Digital Economy Corporation
+    owner: MDEC
+    base_url: https://www.mdec.my/
+    source_grade_default: S2
+    languages: [en, ms]
+    authority_scope: [digital_economy, data_center, ai, digital_investment]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-SPR
+    name: Election Commission of Malaysia
+    owner: SPR
+    base_url: https://spr.gov.my/
+    source_grade_default: S2
+    languages: [ms, en]
+    authority_scope: [elections, constituencies, official_results]
+    document_override: official_result=S1
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-GAZETTE
+    name: Laws of Malaysia / Attorney General's Chambers
+    owner: AGC Malaysia
+    base_url: https://lom.agc.gov.my/
+    source_grade_default: S1
+    languages: [ms, en]
+    authority_scope: [laws, regulations, gazette]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-BURSA
+    name: Bursa Malaysia Company Announcements
+    owner: Bursa Malaysia
+    base_url: https://www.bursamalaysia.com/market_information/announcements/company_announcement
+    source_grade_default: S2
+    languages: [en, ms]
+    authority_scope: [listed_company_disclosures]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-SEDA
+    name: Sustainable Energy Development Authority Malaysia
+    owner: SEDA Malaysia
+    base_url: https://www.seda.gov.my/
+    source_grade_default: S2
+    languages: [ms, en]
+    authority_scope: [renewable_energy, feed_in_tariff, energy_programmes]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-ST
+    name: Energy Commission Malaysia
+    owner: Suruhanjaya Tenaga
+    base_url: https://www.st.gov.my/
+    source_grade_default: S2
+    languages: [ms, en]
+    authority_scope: [energy_regulation, electricity, gas]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-JOHOR
+    name: Johor State Government Official Portal
+    owner: Government of Johor
+    base_url: https://www.johor.gov.my/
+    source_grade_default: S2
+    languages: [ms, en]
+    authority_scope: [johor_government, state_policy, state_projects]
+    crawl_status: pending_terms_review
+  - source_id: SRC-MY-PENANG
+    name: Penang State Government Official Portal
+    owner: Government of Penang
+    base_url: https://www.penang.gov.my/
+    source_grade_default: S2
+    languages: [ms, en]
+    authority_scope: [penang_government, state_policy, state_projects]
+    crawl_status: pending_terms_review

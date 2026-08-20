@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: MIPI API
+  version: 0.1.0
+servers:
+  - url: /v1
+paths:
+  /changes:
+    get:
+      operationId: listChanges
+      responses:
+        '200':
+          description: Important changes
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^EVT-' }
+      responses:
+        '200': { description: Event detail }
+        '404': { description: Event not found }
+

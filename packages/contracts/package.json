@@ -1,0 +1,8 @@
+{
+  "name": "@mipi/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "files": ["schemas", "openapi.yaml"],
+  "scripts": { "test": "node ../../scripts/validate-contracts.mjs" }
+}
+

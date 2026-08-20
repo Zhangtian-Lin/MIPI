@@ -1,0 +1,15 @@
+{
+  "name": "mipi",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @mipi/web dev",
+    "dev:admin": "pnpm --filter @mipi/admin dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "check:structure": "node scripts/check-structure.mjs",
+    "check:contracts": "node scripts/validate-contracts.mjs"
+  }
+}
