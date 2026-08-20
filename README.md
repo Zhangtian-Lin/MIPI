@@ -41,9 +41,17 @@ Web / Admin / future Miniapp
 - Node.js 24+
 - pnpm 10+
 - Python 3.12+
-- Docker-compatible container runtime
+- Docker Desktop with the WSL 2 backend on Windows
 
-Copy `.env.example` to `.env`, then install dependencies and start local infrastructure. Dependency installation has intentionally not been run during repository initialization.
+The JavaScript and Python dependencies are already locked. Create the local environment file and start the infrastructure:
+
+```powershell
+Copy-Item .env.example .env
+pnpm infra:up
+pnpm check:env
+```
+
+The bootstrap command starts PostgreSQL 18 with pgvector, Redis, and MinIO, creates the `mipi-local` object-storage bucket, and applies the initial SQL migration on the first database start. On a new Windows setup, restart Windows after enabling WSL before running Docker Desktop.
 
 ## Documentation
 
@@ -53,6 +61,10 @@ Start with [docs/README.md](docs/README.md). All production-affecting documents 
 
 ```text
 pnpm check:structure
+pnpm check:contracts
+pnpm check:env
+pnpm typecheck
+pnpm build
 python -m compileall backend apps/api apps/worker apps/scheduler
+python -m pytest
 ```
-

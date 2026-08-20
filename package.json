@@ -6,6 +6,10 @@
   "scripts": {
     "dev:web": "pnpm --filter @mipi/web dev",
     "dev:admin": "pnpm --filter @mipi/admin dev",
+    "infra:up": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap-local.ps1",
+    "infra:down": "docker compose -f infra/containers/compose.yaml down",
+    "infra:status": "docker compose -f infra/containers/compose.yaml ps",
+    "check:env": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-local-env.ps1",
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
