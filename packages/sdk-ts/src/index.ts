@@ -6,6 +6,7 @@ import type {
   ReviewDecisionResultVM,
   RobotsStatus,
   SourceDecisionAction,
+  SourceRegistrationDraftVM,
   SourceVM,
 } from "@mipi/view-models";
 
@@ -76,6 +77,22 @@ export class MipiClient {
     const response = await this.get<ApiEnvelope<SourceVM[]>>(
       `/admin/sources?limit=${encodeURIComponent(String(limit))}`,
     );
+    return response.data;
+  }
+
+  async registerSource(
+    registration: SourceRegistrationDraftVM,
+    actorId: string,
+  ): Promise<SourceVM> {
+    const response = await this.request<ApiEnvelope<SourceVM>>("/admin/sources", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Actor-ID": actorId,
+        "X-Actor-Role": "source_admin",
+      },
+      body: JSON.stringify(registration),
+    });
     return response.data;
   }
 

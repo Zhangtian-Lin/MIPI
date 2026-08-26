@@ -23,7 +23,7 @@ header {
   border-bottom: 1px solid var(--line);
 }
 header span, .lede { color: var(--muted); }
-section { padding: 64px 4vw 96px; }
+section { max-width: 1500px; margin: 0 auto; padding: 64px 4vw 96px; }
 .eyebrow {
   margin: 0;
   color: var(--accent);
@@ -136,6 +136,44 @@ h1 {
 .decision-history span { overflow-wrap: anywhere; }
 .source-heading { margin-top: 80px; }
 .source-admin-bar { grid-template-columns: minmax(240px, 1fr) 2fr; }
+.source-registration {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+.source-registration-heading, .source-registration-footer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.source-registration-heading p, .source-registration-footer p, .form-message {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.source-registration button, .source-form-grid input, .source-form-grid select {
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.source-registration button { cursor: pointer; }
+.source-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  margin-top: 20px;
+}
+.source-form-grid label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.source-form-grid .wide-field { grid-column: 1 / -1; }
+.source-registration-footer { margin-top: 18px; }
+.source-registration .primary-action { color: #fff; background: var(--accent); border-color: var(--accent); }
+.source-registration button:disabled { cursor: not-allowed; opacity: .55; }
+.form-message { padding-top: 12px; border-top: 1px solid var(--line); }
 .source-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .source-card {
   display: grid;
@@ -160,6 +198,10 @@ h1 {
 .badge.source-active { color: #fff; background: var(--accent); }
 .badge.source-degraded, .badge.source-inactive { color: #795817; background: #f3e9cb; }
 .badge.source-retired { color: var(--muted); background: #e4e4df; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 3px solid #8cc5b2;
+  outline-offset: 2px;
+}
 
 @media (max-width: 800px) {
   .metrics { grid-template-columns: 1fr; }
@@ -167,6 +209,9 @@ h1 {
   .candidate { grid-template-columns: 1fr; }
   .candidate-side { text-align: left; }
   .source-list { grid-template-columns: 1fr; }
+  .source-form-grid { grid-template-columns: 1fr; }
+  .source-form-grid .wide-field { grid-column: auto; }
+  .source-registration-heading, .source-registration-footer { align-items: stretch; flex-direction: column; }
   .source-card { grid-template-columns: 1fr; }
   .source-actions { flex-direction: row; flex-wrap: wrap; }
 }

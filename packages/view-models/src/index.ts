@@ -91,6 +91,16 @@ export type SourceDecisionAction =
   | "deactivate"
   | "retire";
 
+export interface SourceRegistrationDraftVM {
+  source_id: string;
+  name: string;
+  owner: string;
+  base_url: string;
+  source_grade: SourceGrade;
+  authority_scope: string[];
+  languages: string[];
+}
+
 export interface SourceVM {
   source_id: string;
   name: string;

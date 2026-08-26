@@ -10,6 +10,7 @@ import type {
   SourceVM,
 } from "@mipi/view-models";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SourceRegistrationForm } from "./source-registration-form";
 
 const statusLabels = {
   needs_review: "待审核",
@@ -328,6 +329,12 @@ export default function AdminHome() {
           </label>
           <p>候选来源先进入小流量试采；正式激活必须补充试采证据。</p>
         </div>
+        <SourceRegistrationForm
+          actorId={sourceActorId}
+          client={client}
+          existingSourceIds={new Set(sources.map((source) => source.source_id))}
+          onRegistered={async () => loadRecords()}
+        />
         <div className="source-list">
           {sources.map((source) => {
             const busyKey = `source:${source.source_id}`;
