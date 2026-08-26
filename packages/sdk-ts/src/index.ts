@@ -8,6 +8,7 @@ import type {
   ReviewDecisionAction,
   ReviewDecisionResultVM,
   RobotsStatus,
+  SearchResultsVM,
   SourceDecisionAction,
   SourceRegistrationDraftVM,
   SourceVM,
@@ -57,6 +58,12 @@ export class MipiClient {
     const response = await this.get<ApiEnvelope<EventPublicationVM>>(
       `/events/${encodeURIComponent(eventId)}`,
     );
+    return response.data;
+  }
+
+  async search(query: string, limit = 20): Promise<SearchResultsVM> {
+    const parameters = new URLSearchParams({ q: query, limit: String(limit) });
+    const response = await this.get<ApiEnvelope<SearchResultsVM>>(`/search?${parameters}`);
     return response.data;
   }
 

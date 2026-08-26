@@ -108,6 +108,9 @@ for (const content of [openApi, docsOpenApi]) {
   if (!content.includes("operationId: projectEvent") || !content.includes("operationId: publishEvent")) {
     throw new Error("OpenAPI is missing the governed event publication operations");
   }
+  if (!content.includes("operationId: searchPublishedIntelligence")) {
+    throw new Error("OpenAPI is missing the published intelligence search operation");
+  }
 }
 
 console.log("MIPI contract fixture OK");

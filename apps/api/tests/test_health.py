@@ -29,6 +29,12 @@ def test_changes_rejects_more_than_public_page_limit_before_database_access() ->
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
+def test_search_rejects_short_query_before_database_access() -> None:
+    response = asyncio.run(request("/v1/search?q=a"))
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
 def test_ingestion_contract_rejects_invalid_hash_before_database_access() -> None:
     response = asyncio.run(
         post(
@@ -67,6 +73,7 @@ def test_generated_openapi_includes_ingestion_and_admin_routes() -> None:
     assert "/v1/admin/events/project" in paths
     assert "/v1/admin/events/{event_id}/publish" in paths
     assert "/v1/events/{event_id}" in paths
+    assert "/v1/search" in paths
     assert "/v1/admin/trade-indicators/{batch_id}/publish" in paths
     assert "/v1/trade/overview" in paths
 

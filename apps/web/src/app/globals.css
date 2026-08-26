@@ -23,6 +23,16 @@ nav { display: flex; gap: 24px; color: var(--muted); font-size: 14px; }
 .search-shell { margin-top: 42px; display: flex; max-width: 720px; background: var(--surface); border: 1px solid var(--line); padding: 8px; }
 .search-shell input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 14px; font-size: 16px; }
 .search-shell button { border: 0; background: var(--ink); color: white; padding: 0 24px; }
+.search-page { max-width: 1080px; margin: 0 auto; padding: 84px 5vw; }
+.search-page h1 { margin: 14px 0 28px; font: 500 clamp(42px, 7vw, 76px)/1.08 Georgia, "Noto Serif SC", serif; }
+.search-page .search-shell { max-width: none; margin-top: 0; }
+.search-boundary { margin: 12px 0 36px; color: var(--muted); font-size: 12px; }
+.search-results { padding-top: 24px; }
+.search-result-list { display: grid; gap: 14px; }
+.search-result-list article { padding: 24px; background: var(--surface); border: 1px solid var(--line); }
+.search-result-list h3 { margin: 14px 0 8px; font: 500 27px Georgia, "Noto Serif SC", serif; }
+.search-result-list p { color: var(--muted); line-height: 1.7; }
+.search-result-list blockquote { margin: 16px 0 0; padding-left: 14px; color: var(--muted); border-left: 3px solid var(--accent); font-size: 13px; line-height: 1.7; }
 .notice { font-size: 13px !important; }
 .section { padding: 72px 5vw; border-top: 1px solid var(--line); }
 .section-heading { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }

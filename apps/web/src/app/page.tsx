@@ -42,11 +42,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </StatusBadge>
         <h1>马来西亚产业与政策情报</h1>
         <p>把分散的政策、投资、项目与企业信息，整理成可查询、可追踪、可验证的结构化知识。</p>
-        <label className="search-shell">
+        <form className="search-shell" action="/search" method="get">
           <span className="sr-only">搜索</span>
-          <input disabled placeholder="搜索企业、项目、政策或提问……" />
-          <button disabled>搜索</button>
-        </label>
+          <input aria-label="搜索词" name="q" required minLength={2} maxLength={100} placeholder="搜索已发布事件的中文标题、摘要或原文证据……" />
+          <button type="submit">搜索</button>
+        </form>
         <p className="notice">
           {trade
             ? `贸易数据已通过人工发布，投影版本 v${trade.revision}。`

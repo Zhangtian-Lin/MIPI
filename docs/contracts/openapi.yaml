@@ -5,6 +5,21 @@ info:
 servers:
   - url: /v1
 paths:
+  /search:
+    get:
+      operationId: searchPublishedIntelligence
+      description: Search only current human-published L4 projections and explain each match.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 20, default: 20 }
+      responses:
+        '200': { description: Results grouped by public object type }
+        '422': { description: Invalid query }
   /trade/overview:
     get:
       operationId: getTradeOverview

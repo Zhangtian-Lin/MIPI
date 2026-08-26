@@ -277,3 +277,20 @@ export interface EventSourceTextVM {
   language: string | null;
   text_original: string;
 }
+
+export type SearchMatchReason = "title_zh" | "summary_zh" | "evidence_original" | "source_name";
+
+export interface SearchResultsVM {
+  query: string;
+  groups: {
+    events: Array<{
+      event: EventPublicationVM;
+      match_reason: SearchMatchReason;
+      match_excerpt: string;
+    }>;
+    companies: Array<Record<string, unknown>>;
+    projects: Array<Record<string, unknown>>;
+    policies: Array<Record<string, unknown>>;
+    locations: Array<Record<string, unknown>>;
+  };
+}

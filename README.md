@@ -90,6 +90,10 @@ The event workbench can turn an approved L2 document into a private F1 Event + C
 source span. Only a human Publisher can create the L4 revision returned by `GET /v1/changes`;
 see `docs/product/事件与证据首条闭环.md`.
 
+Public search uses `GET /v1/search` and only reads current L4 event projections. It explains
+whether a result matched the Chinese title, Chinese summary, original evidence, or source name;
+see `docs/product/公开搜索首条闭环.md`.
+
 ## Documentation
 
 Start with [docs/README.md](docs/README.md). All production-affecting documents are currently drafts and require review before autonomous collection or public release.

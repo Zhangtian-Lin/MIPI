@@ -14,6 +14,9 @@ from mipi.modules.events.infrastructure import PostgresEventRepository
 from mipi.modules.ingestion.api import create_ingestion_router
 from mipi.modules.ingestion.application import IngestionService
 from mipi.modules.ingestion.infrastructure import PostgresIngestionRepository
+from mipi.modules.search.api import create_search_router
+from mipi.modules.search.application import SearchService
+from mipi.modules.search.infrastructure import PostgresSearchRepository
 from mipi.modules.sources.api import create_source_router
 from mipi.modules.sources.application import SourceService
 from mipi.modules.sources.infrastructure import PostgresSourceRepository
@@ -76,6 +79,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             local_processing_enabled=settings.env == "local",
             local_publication_enabled=settings.env == "local",
         )
+    )
+    app.include_router(
+        create_search_router(SearchService(PostgresSearchRepository(settings.database_url)))
     )
 
     @app.exception_handler(RequestValidationError)
