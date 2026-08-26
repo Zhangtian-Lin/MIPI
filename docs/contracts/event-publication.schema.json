@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mipi.local/contracts/event-publication.schema.json",
+  "title": "Published MIPI event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "publication_id", "revision", "published_at", "event_type", "title_zh", "summary_zh", "event_date", "event_date_precision", "fact_level", "conflict", "industries", "states", "independent_source_count", "caveats", "evidence"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^EVT-"},
+    "publication_id": {"type": "string", "pattern": "^EVP-"},
+    "revision": {"type": "integer", "minimum": 1},
+    "published_at": {"type": "string", "format": "date-time"},
+    "event_type": {"enum": ["investment", "project_update", "policy_update", "company_update", "tender", "governance_update"]},
+    "title_zh": {"type": "string", "minLength": 5, "maxLength": 160},
+    "summary_zh": {"type": "string", "minLength": 20, "maxLength": 800},
+    "event_date": {"type": ["string", "null"], "format": "date"},
+    "event_date_precision": {"enum": ["day", "month", "year", "unknown"]},
+    "fact_level": {"enum": ["F1", "F2", "F3", "F4"]},
+    "conflict": {"type": "boolean"},
+    "industries": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "states": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "independent_source_count": {"type": "integer", "minimum": 1},
+    "caveats": {"type": "array", "items": {"type": "string"}},
+    "evidence": {"type": "array", "minItems": 1, "items": {"type": "object"}}
+  }
+}

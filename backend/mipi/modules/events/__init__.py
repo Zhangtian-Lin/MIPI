@@ -1,2 +1,1 @@
-"""Normalized events, clustering, entity relationships, and timelines."""
-
+"""Normalized event, exact evidence, and versioned publication workflows."""

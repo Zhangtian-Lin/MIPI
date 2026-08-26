@@ -11,6 +11,7 @@ import type {
 } from "@mipi/view-models";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SourceRegistrationForm } from "./source-registration-form";
+import { EventPublicationWorkbench } from "./event-publication-workbench";
 import { SourceTrialApprovalForm } from "./source-trial-approval-form";
 import { TradePublicationWorkbench } from "./trade-publication-workbench";
 
@@ -360,6 +361,10 @@ export default function AdminHome() {
           <span className="refresh-state">L2 → L3 → L4</span>
         </div>
         <TradePublicationWorkbench client={client} />
+
+        <div className="queue-heading trade-heading"><div><p className="eyebrow">EVENT EVIDENCE</p>
+          <h2>事件与证据工作台</h2></div><span className="refresh-state">L2 → Claim → L4</span></div>
+        <EventPublicationWorkbench client={client} />
       </section>
     </main>
   );

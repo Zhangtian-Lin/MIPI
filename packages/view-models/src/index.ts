@@ -199,3 +199,81 @@ export interface TradeWorkbenchVM {
     created_at: string;
   }>;
 }
+
+export interface EventPublicationVM {
+  event_id: string;
+  publication_id: string;
+  revision: number;
+  published_at: string;
+  event_type: string;
+  title_zh: string;
+  summary_zh: string;
+  event_date: string | null;
+  event_date_precision: "day" | "month" | "year" | "unknown";
+  fact_level: FactLevel;
+  conflict: boolean;
+  industries: string[];
+  states: string[];
+  independent_source_count: number;
+  caveats: string[];
+  evidence: Array<{
+    claim_id: string;
+    source_id: string;
+    source_name: string;
+    source_grade: SourceGrade;
+    document_id: string;
+    document_version: number;
+    canonical_url: string;
+    language: string | null;
+    published_at: string | null;
+    crawled_at: string;
+    source_span: {
+      start: number;
+      end: number;
+      quote_original: string;
+      quote_zh: string;
+      model_id: string;
+      prompt_version: string;
+    };
+    independence_group: string;
+  }>;
+}
+
+export interface EventWorkbenchVM {
+  eligible_ingestions: Array<{
+    ingestion_id: string;
+    document_id: string;
+    source_name: string;
+    source_grade: SourceGrade;
+    canonical_url: string;
+    title_original: string | null;
+    language: string | null;
+    created_at: string;
+    projected_event_count: number;
+  }>;
+  events: Array<{
+    event_id: string;
+    ingestion_id: string;
+    publication_status: string;
+    fact_level: FactLevel;
+    title_zh: string;
+    summary_zh: string;
+    event_type: string;
+    event_date: string | null;
+    industries: string[];
+    states: string[];
+    conflict: boolean;
+    blockers: string[];
+    publication_id: string | null;
+    revision: number | null;
+    duplicate: boolean;
+  }>;
+}
+
+export interface EventSourceTextVM {
+  ingestion_id: string;
+  document_id: string;
+  title_original: string | null;
+  language: string | null;
+  text_original: string;
+}

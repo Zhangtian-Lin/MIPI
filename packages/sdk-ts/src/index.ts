@@ -1,4 +1,7 @@
 import type {
+  EventPublicationVM,
+  EventSourceTextVM,
+  EventWorkbenchVM,
   IngestionCandidateVM,
   IngestionProcessingStatus,
   ReviewActorRole,
@@ -27,8 +30,53 @@ export class MipiClient {
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
-  async listChanges(): Promise<unknown> {
-    return this.get("/changes");
+  async listChanges(): Promise<EventPublicationVM[]> {
+    const response = await this.get<ApiEnvelope<EventPublicationVM[]>>("/changes");
+    return response.data;
+  }
+
+  async getEventWorkbench(actorId: string, limit = 100): Promise<EventWorkbenchVM> {
+    const response = await this.request<ApiEnvelope<EventWorkbenchVM>>(
+      `/admin/events/workbench?limit=${encodeURIComponent(String(limit))}`,
+      { headers: { Accept: "application/json", "X-Actor-ID": actorId,
+                   "X-Actor-Role": "processing_agent" } },
+    );
+    return response.data;
+  }
+
+  async getEventSource(ingestionId: string, actorId: string): Promise<EventSourceTextVM> {
+    const response = await this.request<ApiEnvelope<EventSourceTextVM>>(
+      `/admin/events/ingestions/${encodeURIComponent(ingestionId)}/source`,
+      { headers: { Accept: "application/json", "X-Actor-ID": actorId,
+                   "X-Actor-Role": "processing_agent" } },
+    );
+    return response.data;
+  }
+
+  async projectEvent(
+    payload: Record<string, unknown>, actorId: string, idempotencyKey: string,
+  ): Promise<EventWorkbenchVM["events"][number]> {
+    const response = await this.request<ApiEnvelope<EventWorkbenchVM["events"][number]>>(
+      "/admin/events/project",
+      { method: "POST", headers: { "Content-Type": "application/json", "X-Actor-ID": actorId,
+          "X-Actor-Role": "processing_agent", "Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload) },
+    );
+    return response.data;
+  }
+
+  async publishEvent(
+    eventId: string,
+    decision: { actorId: string; reason: string; idempotencyKey: string },
+  ): Promise<EventPublicationVM> {
+    const response = await this.request<ApiEnvelope<EventPublicationVM>>(
+      `/admin/events/${encodeURIComponent(eventId)}/publish`,
+      { method: "POST", headers: { "Content-Type": "application/json",
+          "X-Actor-ID": decision.actorId, "X-Actor-Role": "publisher",
+          "Idempotency-Key": decision.idempotencyKey },
+        body: JSON.stringify({ reason: decision.reason, rule_version: "event-publication-v1.0" }) },
+    );
+    return response.data;
   }
 
   async getTradeOverview(): Promise<TradeOverviewVM | null> {

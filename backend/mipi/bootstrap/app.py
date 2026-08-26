@@ -8,6 +8,9 @@ from fastapi.responses import JSONResponse
 from mipi.bootstrap.settings import Settings, get_settings
 from mipi.modules.documents.application import DocumentService
 from mipi.modules.documents.infrastructure import MinioRawObjectStorage, PostgresDocumentRepository
+from mipi.modules.events.api import create_event_router
+from mipi.modules.events.application import EventService
+from mipi.modules.events.infrastructure import PostgresEventRepository
 from mipi.modules.ingestion.api import create_ingestion_router
 from mipi.modules.ingestion.application import IngestionService
 from mipi.modules.ingestion.infrastructure import PostgresIngestionRepository
@@ -52,9 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         documents=documents,
         repository=PostgresIngestionRepository(settings.database_url),
     )
-    app.include_router(
-        create_source_router(sources, local_admin_enabled=settings.env == "local")
-    )
+    app.include_router(create_source_router(sources, local_admin_enabled=settings.env == "local"))
     app.include_router(create_ingestion_router(ingestion))
     app.include_router(
         create_review_router(
@@ -69,11 +70,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             local_publication_enabled=settings.env == "local",
         )
     )
+    app.include_router(
+        create_event_router(
+            EventService(PostgresEventRepository(settings.database_url)),
+            local_processing_enabled=settings.env == "local",
+            local_publication_enabled=settings.env == "local",
+        )
+    )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(
-        _request: Request, error: RequestValidationError
-    ) -> JSONResponse:
+    async def validation_error(_request: Request, error: RequestValidationError) -> JSONResponse:
         details = [
             {"path": list(item["loc"]), "message": item["msg"], "type": item["type"]}
             for item in error.errors()
@@ -93,18 +99,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/health", tags=["system"])
     async def health() -> dict[str, str]:
         return {"status": "ok", "environment": settings.env}
-
-    @app.get("/v1/changes", tags=["intelligence"])
-    async def list_changes() -> dict[str, object]:
-        return {
-            "data": [],
-            "meta": {
-                "contract_version": "1.0",
-                "request_id": str(uuid4()),
-                "status": "scaffold",
-            },
-            "error": None,
-        }
 
     return app
 

@@ -86,6 +86,7 @@ paths:
   /changes:
     get:
       operationId: listChanges
+      description: List at most ten current human-published L4 events.
       responses:
         '200': { description: Important changes }
   /events/{eventId}:
@@ -99,6 +100,45 @@ paths:
       responses:
         '200': { description: Event detail }
         '404': { description: Event not found }
+  /admin/events/workbench:
+    get:
+      operationId: getEventWorkbench
+      description: List approved L2 documents and private L3 event publication readiness.
+      responses:
+        '200': { description: Event processing workbench }
+        '503': { description: Operator identity provider is not configured }
+  /admin/events/ingestions/{ingestionId}/source:
+    get:
+      operationId: getEventSource
+      description: Read preserved L2 text for exact source-span selection.
+      parameters:
+        - name: ingestionId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^ING-' }
+      responses:
+        '200': { description: Approved preserved source text }
+  /admin/events/project:
+    post:
+      operationId: projectEvent
+      description: Create one private F1 L3 event and claim from an approved L2 exact source span.
+      responses:
+        '200': { description: Private event created idempotently }
+        '409': { description: L2 or idempotency conflict }
+        '422': { description: Projection or source span is invalid }
+  /admin/events/{eventId}/publish:
+    post:
+      operationId: publishEvent
+      description: Human Publisher creates an immutable public L4 event revision.
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^EVT-' }
+      responses:
+        '200': { description: Published event revision }
+        '409': { description: Publication conflict }
+        '422': { description: Event is not publication-ready }
   /ingestion/records:
     post:
       operationId: submitIngestionRecord

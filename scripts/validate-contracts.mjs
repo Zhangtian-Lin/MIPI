@@ -35,6 +35,13 @@ const tradeSchemaText = readFileSync(tradeSchemaPath, "utf8");
 const docsTradeSchemaText = readFileSync(docsTradeSchemaPath, "utf8");
 const tradeSchema = JSON.parse(tradeSchemaText);
 const tradeFixture = JSON.parse(readFileSync(tradeFixturePath, "utf8"));
+const eventSchemaPath = fromRoot("packages/contracts/schemas/event-publication.schema.json");
+const docsEventSchemaPath = fromRoot("docs/contracts/event-publication.schema.json");
+const eventFixturePath = fromRoot("tests/contract/fixtures/event-publication.valid.json");
+const eventSchemaText = readFileSync(eventSchemaPath, "utf8");
+const docsEventSchemaText = readFileSync(docsEventSchemaPath, "utf8");
+const eventSchema = JSON.parse(eventSchemaText);
+const eventFixture = JSON.parse(readFileSync(eventFixturePath, "utf8"));
 
 if (schemaText !== docsSchemaText) {
   throw new Error("Published and documented ingestion schemas differ");
@@ -45,10 +52,14 @@ if (runReportSchemaText !== docsRunReportSchemaText) {
 if (tradeSchemaText !== docsTradeSchemaText) {
   throw new Error("Published and documented trade overview schemas differ");
 }
+if (eventSchemaText !== docsEventSchemaText) {
+  throw new Error("Published and documented event publication schemas differ");
+}
 
 validateRequiredAndUnknown(schema, fixture, "ingestion fixture");
 validateRequiredAndUnknown(runReportSchema, runReportFixture, "collection run report fixture");
 validateRequiredAndUnknown(tradeSchema, tradeFixture, "trade overview fixture");
+validateRequiredAndUnknown(eventSchema, eventFixture, "event publication fixture");
 
 if (!schema.properties.contract_version.enum.includes(fixture.contract_version)) {
   throw new Error("Unsupported contract_version");
@@ -93,6 +104,9 @@ for (const content of [openApi, docsOpenApi]) {
   }
   if (!content.includes("operationId: getTradeWorkbench")) {
     throw new Error("OpenAPI is missing the trade workbench operation");
+  }
+  if (!content.includes("operationId: projectEvent") || !content.includes("operationId: publishEvent")) {
+    throw new Error("OpenAPI is missing the governed event publication operations");
   }
 }
 

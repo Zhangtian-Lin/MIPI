@@ -4,10 +4,10 @@ MIPI is a Chinese-language intelligence platform for tracking Malaysian industri
 
 ## Repository status
 
-This repository contains a V0 local ingestion slice: registered sources can submit L0-L2
-evidence, raw text is stored in MinIO, metadata and immutable versions are stored in
-PostgreSQL, and candidates appear in the admin review queue. It is not production-ready,
-does not yet run autonomous collection, and cannot publish from the ingestion API.
+This repository contains governed local vertical slices for source registration, L0-L2
+ingestion and review, official trade indicators, and event/evidence publication. Raw text,
+immutable versions, exact evidence spans and published revisions are stored with audit trails.
+It is not production-ready and does not yet run autonomous collection.
 
 ## Architecture
 
@@ -85,6 +85,10 @@ The first public vertical slice is the governed `trade_sitc_1d` overview. An app
 ingestion can be normalized into a private L3 trade batch; only a human Publisher can create
 the versioned L4 projection returned by `GET /v1/trade/overview`. See
 `docs/product/贸易指标首条数据闭环.md`.
+
+The event workbench can turn an approved L2 document into a private F1 Event + Claim + exact
+source span. Only a human Publisher can create the L4 revision returned by `GET /v1/changes`;
+see `docs/product/事件与证据首条闭环.md`.
 
 ## Documentation
 

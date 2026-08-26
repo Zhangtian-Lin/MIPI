@@ -1,0 +1,18 @@
+{
+  "event_id": "EVT-00000000-0000-0000-0000-000000000001",
+  "publication_id": "EVP-00000000-0000-0000-0000-000000000001",
+  "revision": 1,
+  "published_at": "2026-08-26T00:00:00Z",
+  "event_type": "project_update",
+  "title_zh": "柔佛数据中心项目宣布进入建设阶段",
+  "summary_zh": "示例事件仅用于验证机器契约，事实由一个明确来源及精确原文片段支持。",
+  "event_date": "2026-08-26",
+  "event_date_precision": "day",
+  "fact_level": "F1",
+  "conflict": false,
+  "industries": ["data_centres_ai"],
+  "states": ["johor"],
+  "independent_source_count": 1,
+  "caveats": ["该事件目前仅由一个可识别来源支持。"],
+  "evidence": [{"claim_id": "CLM-example"}]
+}
