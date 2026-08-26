@@ -7,30 +7,37 @@ const fromRoot = (path) => resolve(repositoryRoot, path);
 const schemaPath = fromRoot("packages/contracts/schemas/ingestion-envelope.schema.json");
 const docsSchemaPath = fromRoot("docs/contracts/ingestion-envelope.schema.json");
 const fixturePath = fromRoot("tests/contract/fixtures/ingestion-envelope.valid.json");
+const runReportSchemaPath = fromRoot(
+  "packages/contracts/schemas/collection-run-report.schema.json",
+);
+const docsRunReportSchemaPath = fromRoot(
+  "docs/contracts/collection-run-report.schema.json",
+);
+const runReportFixturePath = fromRoot(
+  "tests/contract/fixtures/collection-run-report.valid.json",
+);
 const openApiPath = fromRoot("packages/contracts/openapi.yaml");
 const docsOpenApiPath = fromRoot("docs/contracts/openapi.yaml");
 const schemaText = readFileSync(schemaPath, "utf8");
 const docsSchemaText = readFileSync(docsSchemaPath, "utf8");
 const schema = JSON.parse(schemaText);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
+const runReportSchemaText = readFileSync(runReportSchemaPath, "utf8");
+const docsRunReportSchemaText = readFileSync(docsRunReportSchemaPath, "utf8");
+const runReportSchema = JSON.parse(runReportSchemaText);
+const runReportFixture = JSON.parse(readFileSync(runReportFixturePath, "utf8"));
 const openApi = readFileSync(openApiPath, "utf8");
 const docsOpenApi = readFileSync(docsOpenApiPath, "utf8");
 
 if (schemaText !== docsSchemaText) {
   throw new Error("Published and documented ingestion schemas differ");
 }
-
-const missing = schema.required.filter((field) => !(field in fixture));
-if (missing.length > 0) {
-  console.error(`Fixture is missing required fields: ${missing.join(", ")}`);
-  process.exit(1);
+if (runReportSchemaText !== docsRunReportSchemaText) {
+  throw new Error("Published and documented collection run report schemas differ");
 }
 
-const unknown = Object.keys(fixture).filter((field) => !(field in schema.properties));
-if (schema.additionalProperties === false && unknown.length > 0) {
-  console.error(`Fixture contains unknown fields: ${unknown.join(", ")}`);
-  process.exit(1);
-}
+validateRequiredAndUnknown(schema, fixture, "ingestion fixture");
+validateRequiredAndUnknown(runReportSchema, runReportFixture, "collection run report fixture");
 
 if (!schema.properties.contract_version.enum.includes(fixture.contract_version)) {
   throw new Error("Unsupported contract_version");
@@ -43,6 +50,13 @@ if (!/^sha256:[0-9a-fA-F]{64}$/.test(fixture.content_hash)) {
 }
 if (!(fixture.raw_object_uri || typeof fixture.raw_content === "string")) {
   throw new Error("Fixture requires raw_object_uri or raw_content");
+}
+if (
+  runReportFixture.contract_version !== "1.0" ||
+  runReportFixture.status !== "succeeded" ||
+  runReportFixture.success_count !== 1
+) {
+  throw new Error("Collection run report fixture must describe one successful dry run");
 }
 
 for (const content of [openApi, docsOpenApi]) {
@@ -58,3 +72,16 @@ for (const content of [openApi, docsOpenApi]) {
 }
 
 console.log("MIPI contract fixture OK");
+
+function validateRequiredAndUnknown(schemaValue, fixtureValue, label) {
+  const missing = schemaValue.required.filter((field) => !(field in fixtureValue));
+  if (missing.length > 0) {
+    throw new Error(`${label} is missing required fields: ${missing.join(", ")}`);
+  }
+  const unknown = Object.keys(fixtureValue).filter(
+    (field) => !(field in schemaValue.properties),
+  );
+  if (schemaValue.additionalProperties === false && unknown.length > 0) {
+    throw new Error(`${label} contains unknown fields: ${unknown.join(", ")}`);
+  }
+}

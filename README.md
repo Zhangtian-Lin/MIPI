@@ -73,6 +73,11 @@ writes remain disabled until a real identity provider is configured. Source life
 use `POST /v1/admin/sources/{sourceId}/decisions`; regular scheduled collection is allowed only
 after a source has moved through `candidate → trial → active`.
 
+The first source-specific connector targets the official `data.gov.my` Open Data API. It is
+source-gated and dry-run by default; see
+`docs/agents/data.gov.my首个采集连接器运行规范.md`. No collection is attempted until
+`SRC-MY-DATAGOV` has entered `trial` or `active` through the source-governance workflow.
+
 ## Documentation
 
 Start with [docs/README.md](docs/README.md). All production-affecting documents are currently drafts and require review before autonomous collection or public release.

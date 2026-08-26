@@ -1,6 +1,19 @@
 version: 1
 status: draft
 sources:
+  - source_id: SRC-MY-DATAGOV
+    name: Malaysia Official Open Data Portal
+    owner: Jabatan Digital Negara / Ministry of Digital
+    base_url: https://data.gov.my/
+    api_url: https://api.data.gov.my/data-catalogue
+    source_grade_default: S2
+    languages: [en, ms]
+    authority_scope: [official_open_data, statistics, dataset_catalogue]
+    crawl_status: pending_terms_review
+    robots_status: not_applicable
+    license: CC-BY-4.0
+    rate_limit: 4_requests_per_minute
+    connector: data_gov_my.v1
   - source_id: SRC-MY-MIDA
     name: Malaysian Investment Development Authority
     owner: MIDA

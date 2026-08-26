@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mipi.local/schemas/collection-run-report-v1.json",
+  "title": "MIPI Collection Run Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version", "status", "mode", "started_at", "finished_at", "task_id", "source_id",
+    "dataset_id", "checked_source_count", "success_count", "failure_count",
+    "skipped_count", "submitted_count"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "status": { "enum": ["succeeded", "blocked", "failed"] },
+    "mode": { "enum": ["dry_run", "submit"] },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": ["string", "null"] },
+    "idempotency_key": { "type": "string", "minLength": 8 },
+    "source_id": { "type": "string", "pattern": "^SRC-[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "source_status": { "enum": ["candidate", "trial", "active", "degraded", "inactive", "retired"] },
+    "source_crawl_status": { "type": "string" },
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "crawled_at": { "type": "string", "format": "date-time" },
+    "content_hash": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" },
+    "record_count": { "type": "integer", "minimum": 1 },
+    "byte_count": { "type": "integer", "minimum": 1 },
+    "collection_relevance": { "enum": ["high", "medium", "low", "unknown"] },
+    "verification_hint": { "enum": ["F0", "F1", "F2", "F3", "F4", null] },
+    "publication_status": { "enum": ["raw_only", "staged", "under_review", "quarantined"] },
+    "checked_source_count": { "type": "integer", "minimum": 0 },
+    "success_count": { "type": "integer", "minimum": 0 },
+    "failure_count": { "type": "integer", "minimum": 0 },
+    "skipped_count": { "type": "integer", "minimum": 0 },
+    "submitted_count": { "type": "integer", "minimum": 0 },
+    "ingestion": { "type": ["object", "null"] },
+    "ingestion_meta": { "type": ["object", "null"] },
+    "error_type": { "type": "string" },
+    "error": { "type": "string" },
+    "http_status": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "retry_after": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "succeeded" } } },
+      "then": {
+        "required": [
+          "run_id", "idempotency_key", "source_status", "source_crawl_status",
+          "url", "crawled_at", "content_hash", "record_count", "byte_count",
+          "collection_relevance", "verification_hint", "publication_status"
+        ]
+      },
+      "else": { "required": ["error_type", "error"] }
+    }
+  ]
+}

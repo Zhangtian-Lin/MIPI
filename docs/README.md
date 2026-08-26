@@ -43,6 +43,7 @@
 | `data/来源注册与评级规范.md` | draft | Source Admin |
 | `data/分类体系与术语规范.md` | draft | Data Steward |
 | `agents/Agent编排与交接协议.md` | draft | System Owner |
+| `agents/data.gov.my首个采集连接器运行规范.md` | draft | Crawl Owner |
 | `contracts/机器可执行契约规范.md` | draft | API/Data Owner |
 | `operations/人工审核与发布更正SOP.md` | draft | Editorial Owner |
 | `security/Agent安全与非可信内容处理规范.md` | draft | Security Owner |
