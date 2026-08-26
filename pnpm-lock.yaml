@@ -10,6 +10,12 @@ importers:
 
   apps/admin:
     dependencies:
+      '@mipi/sdk-ts':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
+      '@mipi/view-models':
+        specifier: workspace:*
+        version: link:../../packages/view-models
       next:
         specifier: 16.2.11
         version: 16.2.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -82,6 +88,10 @@ importers:
         version: 5.9.3
 
   packages/sdk-ts:
+    dependencies:
+      '@mipi/view-models':
+        specifier: workspace:*
+        version: link:../view-models
     devDependencies:
       typescript:
         specifier: ^5.9.0

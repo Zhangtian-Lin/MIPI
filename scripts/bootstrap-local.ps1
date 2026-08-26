@@ -26,6 +26,11 @@ if ($LASTEXITCODE -ne 0) {
     throw "Docker Compose could not start the local infrastructure."
 }
 
+& (Join-Path $PSScriptRoot "apply-migrations.ps1")
+if ($LASTEXITCODE -ne 0) {
+    throw "Database migrations could not be applied."
+}
+
 docker compose -f $composeFile run --rm minio-init
 if ($LASTEXITCODE -ne 0) {
     throw "MinIO is running, but the local object-storage bucket could not be initialized."

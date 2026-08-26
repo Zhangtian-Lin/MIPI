@@ -4,23 +4,45 @@
   "title": "MIPI Ingestion Envelope",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "task_id", "idempotency_key", "source_id", "url", "crawled_at", "content_hash", "raw_object_uri"],
+  "required": [
+    "contract_version", "task_id", "idempotency_key", "source_id", "url",
+    "crawled_at", "content_hash"
+  ],
+  "anyOf": [
+    {
+      "required": ["raw_object_uri"],
+      "properties": { "raw_object_uri": { "type": "string", "minLength": 1 } }
+    },
+    {
+      "required": ["raw_content"],
+      "properties": { "raw_content": { "type": "string" } }
+    }
+  ],
+  "allOf": [
+    {
+      "if": { "properties": { "contract_version": { "const": "1.0" } } },
+      "then": { "required": ["raw_object_uri"] }
+    }
+  ],
   "properties": {
-    "contract_version": { "const": "1.0" },
-    "task_id": { "type": "string", "minLength": 1 },
-    "idempotency_key": { "type": "string", "minLength": 8 },
-    "source_id": { "type": "string", "pattern": "^SRC-" },
-    "url": { "type": "string", "format": "uri" },
-    "canonical_url": { "type": ["string", "null"], "format": "uri" },
+    "contract_version": { "enum": ["1.0", "1.1"] },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "run_id": { "type": ["string", "null"], "maxLength": 200 },
+    "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 500 },
+    "source_id": { "type": "string", "pattern": "^SRC-[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
+    "document_type": { "enum": ["html", "pdf", "social", "api", "other"] },
     "published_at": { "type": ["string", "null"], "format": "date-time" },
     "crawled_at": { "type": "string", "format": "date-time" },
-    "content_hash": { "type": "string", "pattern": "^sha256:" },
-    "raw_object_uri": { "type": "string", "minLength": 1 },
-    "language": { "type": ["string", "null"] },
+    "content_hash": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" },
+    "raw_object_uri": { "type": ["string", "null"], "minLength": 1, "pattern": "^(s3|https?)://" },
+    "raw_content": { "type": ["string", "null"], "maxLength": 5000000 },
+    "content_type": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "title_original": { "type": ["string", "null"], "maxLength": 1000 },
+    "language": { "type": ["string", "null"], "maxLength": 35 },
     "collection_relevance": { "enum": ["high", "medium", "low", "unknown"] },
     "verification_hint": { "enum": ["F0", "F1", "F2", "F3", "F4", null] },
     "publication_status": { "enum": ["raw_only", "staged", "under_review", "quarantined"] },
-    "review_flags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+    "metadata": { "type": "object" }
   }
 }
-

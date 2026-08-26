@@ -1,31 +1,15 @@
 openapi: 3.1.0
 info:
   title: MIPI API
-  version: 1.0.0-draft
+  version: 0.2.0
 servers:
   - url: /v1
 paths:
   /changes:
     get:
       operationId: listChanges
-      parameters:
-        - name: cursor
-          in: query
-          schema: { type: string }
-        - name: industry
-          in: query
-          schema: { type: string }
       responses:
-        '200':
-          description: Important changes
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [data, meta]
-                properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/ChangeCard' } }
-                  meta: { $ref: '#/components/schemas/Meta' }
+        '200': { description: Important changes }
   /events/{eventId}:
     get:
       operationId: getEvent
@@ -36,34 +20,72 @@ paths:
           schema: { type: string, pattern: '^EVT-' }
       responses:
         '200': { description: Event detail }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { description: Event not found }
+  /ingestion/records:
+    post:
+      operationId: submitIngestionRecord
+      description: Store an L0-L2 record and route it to review; this endpoint cannot publish.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IngestionEnvelope' }
+      responses:
+        '200': { description: Stored or idempotent duplicate }
+        '404': { description: Source not registered }
+        '409': { description: Idempotency key conflict }
+        '422': { description: Contract or hash validation failed }
+  /admin/sources:
+    get:
+      operationId: listSources
+      responses:
+        '200': { description: Registered source candidates }
+    post:
+      operationId: registerSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SourceRegistration' }
+      responses:
+        '200': { description: Source registered or idempotent duplicate }
+        '409': { description: Existing source differs }
+  /admin/ingestion-records:
+    get:
+      operationId: listIngestionCandidates
+      parameters:
+        - name: status
+          in: query
+          schema: { enum: [needs_review, quarantined] }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200': { description: L2 review candidates }
+  /admin/ingestion-records/{ingestionId}:
+    get:
+      operationId: getIngestionCandidate
+      parameters:
+        - name: ingestionId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^ING-' }
+      responses:
+        '200': { description: Candidate detail }
+        '404': { description: Candidate not found }
 components:
   schemas:
-    ChangeCard:
+    IngestionEnvelope:
+      $ref: './ingestion-envelope.schema.json'
+    SourceRegistration:
       type: object
-      required: [event_id, title, event_date, fact_level, independent_source_count]
+      additionalProperties: false
+      required: [source_id, name, owner, base_url, source_grade]
       properties:
-        event_id: { type: string }
-        title: { type: string }
-        event_date: { type: string, format: date }
-        fact_level: { enum: [F0, F1, F2, F3, F4] }
-        independent_source_count: { type: integer, minimum: 0 }
-        conflict: { type: boolean }
-    Meta:
-      type: object
-      required: [request_id, contract_version]
-      properties:
-        request_id: { type: string }
-        contract_version: { type: string }
-    Error:
-      type: object
-      required: [code, message, request_id, retryable]
-      properties:
-        code: { type: string }
-        message: { type: string }
-        request_id: { type: string }
-        retryable: { type: boolean }
-  responses:
-    NotFound:
-      description: Resource not found
-
+        source_id: { type: string, pattern: '^SRC-' }
+        name: { type: string, minLength: 1 }
+        owner: { type: string, minLength: 1 }
+        base_url: { type: string, format: uri }
+        source_grade: { enum: [S1, S2, S3, S4, S5, S6] }
+        authority_scope: { type: array, items: { type: string }, default: [] }
+        languages: { type: array, items: { type: string }, default: [] }

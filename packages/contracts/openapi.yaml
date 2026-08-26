@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: MIPI API
-  version: 0.1.0
+  version: 0.2.0
 servers:
   - url: /v1
 paths:
@@ -9,8 +9,7 @@ paths:
     get:
       operationId: listChanges
       responses:
-        '200':
-          description: Important changes
+        '200': { description: Important changes }
   /events/{eventId}:
     get:
       operationId: getEvent
@@ -22,4 +21,71 @@ paths:
       responses:
         '200': { description: Event detail }
         '404': { description: Event not found }
-
+  /ingestion/records:
+    post:
+      operationId: submitIngestionRecord
+      description: Store an L0-L2 record and route it to review; this endpoint cannot publish.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IngestionEnvelope' }
+      responses:
+        '200': { description: Stored or idempotent duplicate }
+        '404': { description: Source not registered }
+        '409': { description: Idempotency key conflict }
+        '422': { description: Contract or hash validation failed }
+  /admin/sources:
+    get:
+      operationId: listSources
+      responses:
+        '200': { description: Registered source candidates }
+    post:
+      operationId: registerSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SourceRegistration' }
+      responses:
+        '200': { description: Source registered or idempotent duplicate }
+        '409': { description: Existing source differs }
+  /admin/ingestion-records:
+    get:
+      operationId: listIngestionCandidates
+      parameters:
+        - name: status
+          in: query
+          schema: { enum: [needs_review, quarantined] }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200': { description: L2 review candidates }
+  /admin/ingestion-records/{ingestionId}:
+    get:
+      operationId: getIngestionCandidate
+      parameters:
+        - name: ingestionId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^ING-' }
+      responses:
+        '200': { description: Candidate detail }
+        '404': { description: Candidate not found }
+components:
+  schemas:
+    IngestionEnvelope:
+      $ref: './schemas/ingestion-envelope.schema.json'
+    SourceRegistration:
+      type: object
+      additionalProperties: false
+      required: [source_id, name, owner, base_url, source_grade]
+      properties:
+        source_id: { type: string, pattern: '^SRC-' }
+        name: { type: string, minLength: 1 }
+        owner: { type: string, minLength: 1 }
+        base_url: { type: string, format: uri }
+        source_grade: { enum: [S1, S2, S3, S4, S5, S6] }
+        authority_scope: { type: array, items: { type: string }, default: [] }
+        languages: { type: array, items: { type: string }, default: [] }

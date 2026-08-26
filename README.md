@@ -4,7 +4,10 @@ MIPI is a Chinese-language intelligence platform for tracking Malaysian industri
 
 ## Repository status
 
-This repository is an initialized V0 engineering scaffold. It is not production-ready and does not yet perform autonomous collection or public publishing.
+This repository contains a V0 local ingestion slice: registered sources can submit L0-L2
+evidence, raw text is stored in MinIO, metadata and immutable versions are stored in
+PostgreSQL, and candidates appear in the admin review queue. It is not production-ready,
+does not yet run autonomous collection, and cannot publish from the ingestion API.
 
 ## Architecture
 
@@ -51,7 +54,20 @@ pnpm infra:up
 pnpm check:env
 ```
 
-The bootstrap command starts PostgreSQL 18 with pgvector, Redis, and MinIO, creates the `mipi-local` object-storage bucket, and applies the initial SQL migration on the first database start. On a new Windows setup, restart Windows after enabling WSL before running Docker Desktop.
+The bootstrap command starts PostgreSQL 18 with pgvector, Redis, and MinIO, creates the
+`mipi-local` object-storage bucket, and applies every pending SQL migration. On a new Windows
+setup, restart Windows after enabling WSL before running Docker Desktop.
+
+Run the API and admin console in separate terminals:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn mipi.bootstrap.app:create_app --factory --reload
+pnpm dev:admin
+```
+
+Local API docs are at `http://localhost:8000/docs`; the review console is at
+`http://localhost:3001`. Register a candidate source through `POST /v1/admin/sources`, then
+submit evidence through `POST /v1/ingestion/records` using contract version 1.1.
 
 ## Documentation
 
@@ -67,4 +83,11 @@ pnpm typecheck
 pnpm build
 python -m compileall backend apps/api apps/worker apps/scheduler
 python -m pytest
+```
+
+With local infrastructure running, include the real PostgreSQL/MinIO flow:
+
+```powershell
+$env:MIPI_RUN_INTEGRATION="1"
+.\.venv\Scripts\python.exe -m pytest tests/integration/test_local_ingestion_flow.py
 ```

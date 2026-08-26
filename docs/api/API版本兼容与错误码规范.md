@@ -22,7 +22,11 @@
 
 | Code | HTTP | 含义 | 可重试 |
 |---|---:|---|---|
-| VALIDATION_ERROR | 400 | 输入或 Schema 错误 | 否 |
+| VALIDATION_ERROR | 422 | 输入或 Schema 错误 | 否 |
+| CONTENT_HASH_MISMATCH | 422 | 原文复算摘要与提交值不同 | 否 |
+| SOURCE_NOT_FOUND | 404 | 采集包引用的来源未登记 | 否 |
+| SOURCE_CONFLICT | 409 | 同一来源 ID 的登记字段不一致 | 否 |
+| IDEMPOTENCY_CONFLICT | 409 | 同一幂等键对应不同输入 | 否 |
 | UNAUTHORIZED | 401 | 未认证 | 条件 |
 | FORBIDDEN | 403 | 无权限 | 否 |
 | NOT_FOUND | 404 | 对象不存在 | 否 |
@@ -47,4 +51,3 @@
 ## 7. 弃用
 
 响应头和文档公布弃用日期、替代接口和迁移说明；至少覆盖一个客户端发布周期。安全问题可加速，但必须提供通知和兼容处理。
-

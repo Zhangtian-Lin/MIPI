@@ -1,9 +1,16 @@
 import { readFileSync } from "node:fs";
 
 const schemaPath = "packages/contracts/schemas/ingestion-envelope.schema.json";
+const docsSchemaPath = "docs/contracts/ingestion-envelope.schema.json";
 const fixturePath = "tests/contract/fixtures/ingestion-envelope.valid.json";
-const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+const schemaText = readFileSync(schemaPath, "utf8");
+const docsSchemaText = readFileSync(docsSchemaPath, "utf8");
+const schema = JSON.parse(schemaText);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
+
+if (schemaText !== docsSchemaText) {
+  throw new Error("Published and documented ingestion schemas differ");
+}
 
 const missing = schema.required.filter((field) => !(field in fixture));
 if (missing.length > 0) {
@@ -17,8 +24,17 @@ if (schema.additionalProperties === false && unknown.length > 0) {
   process.exit(1);
 }
 
-if (!fixture.source_id.startsWith("SRC-")) throw new Error("Invalid source_id");
-if (!fixture.content_hash.startsWith("sha256:")) throw new Error("Invalid content_hash");
+if (!schema.properties.contract_version.enum.includes(fixture.contract_version)) {
+  throw new Error("Unsupported contract_version");
+}
+if (!/^SRC-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fixture.source_id)) {
+  throw new Error("Invalid source_id");
+}
+if (!/^sha256:[0-9a-fA-F]{64}$/.test(fixture.content_hash)) {
+  throw new Error("Invalid content_hash");
+}
+if (!(fixture.raw_object_uri || typeof fixture.raw_content === "string")) {
+  throw new Error("Fixture requires raw_object_uri or raw_content");
+}
 
 console.log("MIPI contract fixture OK");
-

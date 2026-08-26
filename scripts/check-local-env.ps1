@@ -20,8 +20,13 @@ if ($LASTEXITCODE -ne 0 -or -not $containerIds) {
 }
 
 $tableCount = docker compose -f $composeFile exec -T postgres psql -U mipi -d mipi -tAc "select count(*) from information_schema.tables where table_schema = 'public';"
-if ($LASTEXITCODE -ne 0 -or [int]$tableCount -lt 1) {
+if ($LASTEXITCODE -ne 0 -or [int]$tableCount -lt 18) {
     throw "PostgreSQL is reachable, but the MIPI schema is missing."
+}
+
+$migrationCount = docker compose -f $composeFile exec -T postgres psql -U mipi -d mipi -tAc "select count(*) from schema_migrations;"
+if ($LASTEXITCODE -ne 0 -or [int]$migrationCount -lt 2) {
+    throw "PostgreSQL is reachable, but one or more MIPI migrations are missing."
 }
 
 $redisResult = docker compose -f $composeFile exec -T redis redis-cli ping
@@ -36,6 +41,7 @@ if ($minioResponse.StatusCode -ne 200) {
 
 Write-Output "Docker engine: ready"
 Write-Output "PostgreSQL schema tables: $($tableCount.Trim())"
+Write-Output "Database migrations: $($migrationCount.Trim())"
 Write-Output "Redis: PONG"
 Write-Output "MinIO: healthy"
 Write-Output "MIPI local environment check passed."

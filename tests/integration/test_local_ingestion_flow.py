@@ -1,0 +1,159 @@
+import asyncio
+import hashlib
+import os
+from contextlib import suppress
+from uuid import uuid4
+
+import httpx
+import pytest
+from minio import Minio
+from mipi.bootstrap.app import create_app
+from mipi.bootstrap.settings import Settings
+from mipi.shared.database import open_database
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("MIPI_RUN_INTEGRATION") != "1",
+    reason="set MIPI_RUN_INTEGRATION=1 when local PostgreSQL and MinIO are running",
+)
+
+
+def test_l0_l2_ingestion_is_idempotent_and_reviewable() -> None:
+    asyncio.run(_run_flow())
+
+
+async def _run_flow() -> None:
+    settings = Settings()
+    token = uuid4().hex
+    source_id = f"SRC-INTEGRATION-{token}"
+    content = f"Synthetic MIPI integration evidence {token}"
+    digest = hashlib.sha256(content.encode()).hexdigest()
+    object_name = f"raw/{source_id}/{digest[:2]}/{digest}.txt"
+    ingestion_id: str | None = None
+
+    transport = httpx.ASGITransport(app=create_app(settings))
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            source_response = await client.post(
+                "/v1/admin/sources",
+                json={
+                    "source_id": source_id,
+                    "name": "Synthetic integration source",
+                    "owner": "MIPI test suite",
+                    "base_url": f"https://{token}.example.test",
+                    "source_grade": "S2",
+                    "authority_scope": ["integration-test"],
+                    "languages": ["en"],
+                },
+            )
+            assert source_response.status_code == 200, source_response.text
+
+            payload = {
+                "contract_version": "1.1",
+                "task_id": f"integration-{token}",
+                "run_id": f"run-{token}",
+                "idempotency_key": f"integration-key-{token}",
+                "source_id": source_id,
+                "url": f"https://{token}.example.test/article#source-fragment",
+                "document_type": "html",
+                "language": "en",
+                "published_at": None,
+                "crawled_at": "2026-08-26T00:00:00Z",
+                "content_hash": f"sha256:{digest}",
+                "raw_content": content,
+                "content_type": "text/plain; charset=utf-8",
+                "title_original": "Synthetic integration document",
+                "collection_relevance": "high",
+                "verification_hint": "F1",
+                "publication_status": "staged",
+                "metadata": {"synthetic": True},
+            }
+            first = await client.post("/v1/ingestion/records", json=payload)
+            assert first.status_code == 200, first.text
+            first_body = first.json()
+            ingestion_id = first_body["data"]["ingestion_id"]
+            assert first_body["meta"]["duplicate"] is False
+            assert first_body["data"]["processing_status"] == "needs_review"
+            assert first_body["data"]["canonical_url"].endswith("/article")
+
+            duplicate = await client.post("/v1/ingestion/records", json=payload)
+            assert duplicate.status_code == 200, duplicate.text
+            assert duplicate.json()["meta"]["duplicate"] is True
+            assert duplicate.json()["data"]["ingestion_id"] == ingestion_id
+
+            detail = await client.get(f"/v1/admin/ingestion-records/{ingestion_id}")
+            assert detail.status_code == 200, detail.text
+            assert detail.json()["data"]["review"]["status"] == "queued"
+
+        minio = Minio(
+            settings.object_storage_endpoint.removeprefix("http://").removeprefix("https://"),
+            access_key=settings.object_storage_access_key,
+            secret_key=settings.object_storage_secret_key,
+            secure=settings.object_storage_endpoint.startswith("https://"),
+        )
+        assert minio.stat_object(settings.object_storage_bucket, object_name).size == len(
+            content.encode()
+        )
+
+        with open_database(settings.database_url) as connection:
+            version_count = connection.execute(
+                """
+                SELECT count(*) AS count
+                FROM document_versions dv
+                JOIN documents d ON d.id = dv.document_id
+                JOIN sources s ON s.id = d.source_id
+                WHERE s.public_id = %s
+                """,
+                (source_id,),
+            ).fetchone()
+            assert version_count is not None
+            assert version_count["count"] == 1
+    finally:
+        _cleanup(settings, source_id, ingestion_id, object_name)
+
+
+def _cleanup(
+    settings: Settings, source_id: str, ingestion_id: str | None, object_name: str
+) -> None:
+    minio = Minio(
+        settings.object_storage_endpoint.removeprefix("http://").removeprefix("https://"),
+        access_key=settings.object_storage_access_key,
+        secret_key=settings.object_storage_secret_key,
+        secure=settings.object_storage_endpoint.startswith("https://"),
+    )
+    with suppress(Exception):
+        minio.remove_object(settings.object_storage_bucket, object_name)
+
+    with open_database(settings.database_url) as connection, connection.transaction():
+        source = connection.execute(
+            "SELECT id FROM sources WHERE public_id = %s", (source_id,)
+        ).fetchone()
+        if source is None:
+            return
+        documents = connection.execute(
+            "SELECT id FROM documents WHERE source_id = %s", (source["id"],)
+        ).fetchall()
+        document_ids = [row["id"] for row in documents]
+        ingestion = None
+        if ingestion_id is not None:
+            ingestion = connection.execute(
+                "SELECT id FROM ingestion_records WHERE public_id = %s", (ingestion_id,)
+            ).fetchone()
+        if ingestion is not None:
+            connection.execute("DELETE FROM outbox WHERE aggregate_id = %s", (ingestion["id"],))
+            connection.execute(
+                """
+                DELETE FROM review_tasks
+                WHERE object_type = 'ingestion_record' AND object_id = %s
+                """,
+                (ingestion["id"],),
+            )
+            connection.execute("DELETE FROM ingestion_records WHERE id = %s", (ingestion["id"],))
+        if ingestion_id is not None:
+            connection.execute("DELETE FROM audit_log WHERE object_id = %s", (ingestion_id,))
+        for document_id in document_ids:
+            connection.execute(
+                "DELETE FROM document_versions WHERE document_id = %s", (document_id,)
+            )
+        connection.execute("DELETE FROM documents WHERE source_id = %s", (source["id"],))
+        connection.execute("DELETE FROM audit_log WHERE object_id = %s", (source_id,))
+        connection.execute("DELETE FROM sources WHERE id = %s", (source["id"],))

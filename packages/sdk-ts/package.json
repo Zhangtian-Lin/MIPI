@@ -5,6 +5,6 @@
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@mipi/view-models": "workspace:*" },
   "devDependencies": { "typescript": "^5.9.0" }
 }
-

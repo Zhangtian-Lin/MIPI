@@ -1,18 +1,20 @@
 {
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "task_id": "crawl-local-example",
-  "idempotency_key": "SRC-MY-MIDA:https://example.invalid/document:sha256-example",
+  "run_id": "run-local-001",
+  "idempotency_key": "SRC-MY-MIDA:https://example.invalid/document:9d5a0d29",
   "source_id": "SRC-MY-MIDA",
   "url": "https://example.invalid/document",
-  "canonical_url": "https://example.invalid/document",
+  "document_type": "html",
   "published_at": null,
   "crawled_at": "2026-08-20T00:00:00Z",
-  "content_hash": "sha256:example",
-  "raw_object_uri": "s3://mipi-local/raw/example",
+  "content_hash": "sha256:9d5a0d296580a6b1be17d1eee7da420aa13cf5a91ad240ea1ab401c074457e2a",
+  "raw_content": "MIPI integration fixture",
+  "content_type": "text/plain; charset=utf-8",
+  "title_original": "Local fixture",
   "language": "en",
   "collection_relevance": "unknown",
   "verification_hint": null,
   "publication_status": "staged",
-  "review_flags": []
+  "metadata": { "fixture": true }
 }
-

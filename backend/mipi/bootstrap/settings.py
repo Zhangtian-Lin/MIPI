@@ -13,9 +13,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     object_storage_endpoint: str = "http://localhost:9000"
     object_storage_bucket: str = "mipi-local"
+    object_storage_access_key: str = "mipi_local"
+    object_storage_secret_key: str = "change-me-now"
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
