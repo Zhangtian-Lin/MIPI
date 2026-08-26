@@ -80,7 +80,14 @@ def create_ingestion_router(service: IngestionService) -> APIRouter:
     @router.get("/v1/admin/ingestion-records")
     def list_candidates(
         limit: Annotated[int, Query(ge=1, le=500)] = 50,
-        status: Annotated[str | None, Query(pattern=r"^(needs_review|quarantined)$")] = None,
+        status: Annotated[
+            str | None,
+            Query(
+                pattern=(
+                    r"^(needs_review|in_review|approved|returned|rejected|quarantined)$"
+                )
+            ),
+        ] = None,
     ) -> dict[str, object]:
         records = [_record_payload(record) for record in service.list(limit=limit, status=status)]
         return _response(records, count=len(records))
@@ -143,6 +150,15 @@ def _record_payload(record: IngestionRecord) -> dict[str, object]:
             "review_task_id": record.review_task_id,
             "status": record.review_status,
             "risk_level": record.risk_level,
+            "decisions": [
+                {
+                    "actor_id": decision.actor_id,
+                    "actor_role": decision.actor_role,
+                    "action": decision.action,
+                    "created_at": decision.created_at,
+                }
+                for decision in record.review_decisions
+            ],
         },
         "created_at": record.created_at.isoformat(),
     }

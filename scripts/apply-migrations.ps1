@@ -7,6 +7,7 @@ $migrationDirectory = Join-Path $repositoryRoot "infra\database\migrations"
 Set-Location $repositoryRoot
 
 $migrationBootstrap = @"
+SET client_min_messages TO warning;
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename text PRIMARY KEY,
     applied_at timestamptz NOT NULL DEFAULT now()

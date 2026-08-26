@@ -3,10 +3,14 @@ import { readFileSync } from "node:fs";
 const schemaPath = "packages/contracts/schemas/ingestion-envelope.schema.json";
 const docsSchemaPath = "docs/contracts/ingestion-envelope.schema.json";
 const fixturePath = "tests/contract/fixtures/ingestion-envelope.valid.json";
+const openApiPath = "packages/contracts/openapi.yaml";
+const docsOpenApiPath = "docs/contracts/openapi.yaml";
 const schemaText = readFileSync(schemaPath, "utf8");
 const docsSchemaText = readFileSync(docsSchemaPath, "utf8");
 const schema = JSON.parse(schemaText);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
+const openApi = readFileSync(openApiPath, "utf8");
+const docsOpenApi = readFileSync(docsOpenApiPath, "utf8");
 
 if (schemaText !== docsSchemaText) {
   throw new Error("Published and documented ingestion schemas differ");
@@ -35,6 +39,15 @@ if (!/^sha256:[0-9a-fA-F]{64}$/.test(fixture.content_hash)) {
 }
 if (!(fixture.raw_object_uri || typeof fixture.raw_content === "string")) {
   throw new Error("Fixture requires raw_object_uri or raw_content");
+}
+
+for (const content of [openApi, docsOpenApi]) {
+  if (!content.includes("operationId: submitIngestionRecord")) {
+    throw new Error("OpenAPI is missing the ingestion operation");
+  }
+  if (!content.includes("operationId: decideReviewTask")) {
+    throw new Error("OpenAPI is missing the review decision operation");
+  }
 }
 
 console.log("MIPI contract fixture OK");

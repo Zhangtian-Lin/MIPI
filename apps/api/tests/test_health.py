@@ -2,6 +2,7 @@ import asyncio
 
 import httpx
 from mipi.bootstrap.app import create_app
+from mipi.bootstrap.settings import Settings
 
 
 async def request(path: str) -> httpx.Response:
@@ -57,3 +58,19 @@ def test_generated_openapi_includes_ingestion_and_admin_routes() -> None:
     assert "/v1/ingestion/records" in paths
     assert "/v1/admin/sources" in paths
     assert "/v1/admin/ingestion-records" in paths
+    assert "/v1/admin/review-tasks/{review_task_id}/decisions" in paths
+
+
+def test_production_rejects_header_only_review_identity() -> None:
+    async def run() -> httpx.Response:
+        transport = httpx.ASGITransport(app=create_app(Settings(env="production")))
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.post(
+                "/v1/admin/review-tasks/REV-test/decisions",
+                headers={"X-Actor-ID": "reviewer-test", "X-Actor-Role": "reviewer"},
+                json={"action": "approve", "reason": "Checked test evidence."},
+            )
+
+    response = asyncio.run(run())
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "REVIEW_AUTH_NOT_CONFIGURED"

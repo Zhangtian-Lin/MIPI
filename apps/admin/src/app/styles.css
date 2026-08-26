@@ -63,6 +63,34 @@ h1 {
 }
 .queue-heading h2 { margin: 8px 0 0; font: 500 30px Georgia, serif; }
 .refresh-state { color: var(--muted); font-size: 13px; }
+.refresh, .actions button {
+  padding: 9px 13px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.refresh:disabled, .actions button:disabled { cursor: wait; opacity: .55; }
+.reviewer-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) 2fr;
+  gap: 16px;
+  align-items: end;
+  padding: 16px;
+  background: #ebe8de;
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+.reviewer-bar label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.reviewer-bar input, .reviewer-bar select {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.reviewer-bar p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .notice {
   margin-top: 16px;
   padding: 20px;
@@ -87,6 +115,9 @@ h1 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.actions button:first-child { color: #fff; background: var(--accent); border-color: var(--accent); }
+.actions button.danger { color: var(--danger); border-color: #d9aaa1; }
 .badges { display: flex; gap: 8px; }
 .badge {
   padding: 4px 8px;
@@ -100,9 +131,13 @@ h1 {
 .badge.neutral { background: #eceae3; color: #555d56; }
 .candidate-side { text-align: right; }
 .candidate-side strong { display: block; margin-top: 16px; color: var(--ink); }
+.decision-history { display: grid; gap: 5px; margin-top: 18px; }
+.decision-history strong { margin: 0; font-size: 12px; }
+.decision-history span { overflow-wrap: anywhere; }
 
 @media (max-width: 800px) {
   .metrics { grid-template-columns: 1fr; }
+  .reviewer-bar { grid-template-columns: 1fr; }
   .candidate { grid-template-columns: 1fr; }
   .candidate-side { text-align: left; }
 }

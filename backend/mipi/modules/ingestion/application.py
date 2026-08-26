@@ -78,6 +78,8 @@ class IngestionService:
 
         source = self._sources.get(submission.source_id)
         flags = review_flags_for(submission)
+        if source.status == "candidate" or source.crawl_status != "approved":
+            flags = (*flags, "source_registration_pending")
         processing_status = processing_status_for(flags)
         publication_status = (
             "quarantined"

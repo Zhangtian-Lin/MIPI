@@ -20,12 +20,12 @@ if ($LASTEXITCODE -ne 0 -or -not $containerIds) {
 }
 
 $tableCount = docker compose -f $composeFile exec -T postgres psql -U mipi -d mipi -tAc "select count(*) from information_schema.tables where table_schema = 'public';"
-if ($LASTEXITCODE -ne 0 -or [int]$tableCount -lt 18) {
+if ($LASTEXITCODE -ne 0 -or [int]$tableCount -lt 20) {
     throw "PostgreSQL is reachable, but the MIPI schema is missing."
 }
 
 $migrationCount = docker compose -f $composeFile exec -T postgres psql -U mipi -d mipi -tAc "select count(*) from schema_migrations;"
-if ($LASTEXITCODE -ne 0 -or [int]$migrationCount -lt 2) {
+if ($LASTEXITCODE -ne 0 -or [int]$migrationCount -lt 3) {
     throw "PostgreSQL is reachable, but one or more MIPI migrations are missing."
 }
 

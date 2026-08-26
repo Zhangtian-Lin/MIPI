@@ -5,8 +5,9 @@ from uuid import UUID
 
 from psycopg.types.json import Jsonb
 
-from mipi.modules.documents.domain import DocumentVersionRecord, L2PublicationStatus
+from mipi.modules.documents.domain import DocumentVersionRecord
 from mipi.modules.ingestion.domain import (
+    CandidatePublicationStatus,
     CollectionRelevance,
     FactLevel,
     IdempotencyConflictError,
@@ -15,6 +16,7 @@ from mipi.modules.ingestion.domain import (
     IngestionResult,
     IngestionSubmission,
     ProcessingStatus,
+    ReviewDecisionSummary,
     RiskLevel,
 )
 from mipi.shared.database import open_database
@@ -191,7 +193,22 @@ class PostgresIngestionRepository:
             SELECT ir.*, s.public_id AS source_public_id, s.name AS source_name,
                    s.source_grade, d.public_id AS document_public_id,
                    dv.version_number, rt.public_id AS review_task_public_id,
-                   rt.status AS review_status, rt.risk_level
+                   rt.status AS review_status, rt.risk_level,
+                   COALESCE(
+                       (
+                           SELECT jsonb_agg(
+                               jsonb_build_object(
+                                   'actor_id', rd.actor_id,
+                                   'actor_role', rd.actor_role,
+                                   'action', rd.decision,
+                                   'created_at', rd.created_at
+                               ) ORDER BY rd.created_at
+                           )
+                           FROM review_decisions rd
+                           WHERE rd.review_task_id = rt.id
+                       ),
+                       '[]'::jsonb
+                   ) AS review_decisions
             FROM ingestion_records ir
             JOIN sources s ON s.id = ir.source_id
             JOIN documents d ON d.id = ir.document_id
@@ -217,12 +234,21 @@ class PostgresIngestionRepository:
             raw_object_uri=cast(str, row["raw_object_uri"]),
             collection_relevance=cast(CollectionRelevance, row["collection_relevance"]),
             verification_hint=cast(FactLevel | None, row["verification_hint"]),
-            publication_status=cast(L2PublicationStatus, row["publication_status"]),
+            publication_status=cast(CandidatePublicationStatus, row["publication_status"]),
             processing_status=cast(ProcessingStatus, row["processing_status"]),
             review_flags=tuple(cast(list[str], row["review_flags"])),
             review_task_id=cast(str, row["review_task_public_id"]),
             review_status=cast(str, row["review_status"]),
             risk_level=cast(RiskLevel, row["risk_level"]),
+            review_decisions=tuple(
+                ReviewDecisionSummary(
+                    actor_id=cast(str, item["actor_id"]),
+                    actor_role=cast(str, item["actor_role"]),
+                    action=cast(str, item["action"]),
+                    created_at=cast(str, item["created_at"]),
+                )
+                for item in cast(list[dict[str, object]], row["review_decisions"])
+            ),
             created_at=row["created_at"],
         )
 

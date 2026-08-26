@@ -27,6 +27,11 @@
 | SOURCE_NOT_FOUND | 404 | 采集包引用的来源未登记 | 否 |
 | SOURCE_CONFLICT | 409 | 同一来源 ID 的登记字段不一致 | 否 |
 | IDEMPOTENCY_CONFLICT | 409 | 同一幂等键对应不同输入 | 否 |
+| REVIEW_TASK_NOT_FOUND | 404 | 审核任务不存在 | 否 |
+| REVIEW_CONFLICT | 409 | 任务已完成或同一审核人重复决定 | 否 |
+| REVIEW_PERMISSION_DENIED | 403 | 当前角色不能执行该审核决定 | 否 |
+| INVALID_REVIEW_DECISION | 422 | 理由、限制条件或状态不符合规则 | 否 |
+| REVIEW_AUTH_NOT_CONFIGURED | 503 | 生产审核身份系统尚未配置 | 是 |
 | UNAUTHORIZED | 401 | 未认证 | 条件 |
 | FORBIDDEN | 403 | 无权限 | 否 |
 | NOT_FOUND | 404 | 对象不存在 | 否 |

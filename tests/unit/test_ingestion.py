@@ -96,6 +96,7 @@ class FakeIngestionRepository:
             review_task_id="REV-test",
             review_status="queued",
             risk_level=cast(str, kwargs["risk_level"]),  # type: ignore[arg-type]
+            review_decisions=(),
             created_at=datetime.now(UTC),
         )
         self.by_key[submission.idempotency_key] = record
@@ -151,6 +152,8 @@ def test_submission_stores_raw_content_and_canonicalizes_url() -> None:
     assert result.duplicate is False
     assert result.record.canonical_url == "https://example.test/article"
     assert result.record.processing_status == "needs_review"
+    assert result.record.risk_level == "R1"
+    assert "source_registration_pending" in result.record.review_flags
     assert storage.put_count == 1
 
 

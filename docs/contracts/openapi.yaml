@@ -73,6 +73,34 @@ paths:
       responses:
         '200': { description: Candidate detail }
         '404': { description: Candidate not found }
+  /admin/review-tasks/{reviewTaskId}/decisions:
+    post:
+      operationId: decideReviewTask
+      description: Record one human decision; risk gates determine whether review completes.
+      parameters:
+        - name: reviewTaskId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^REV-' }
+        - name: X-Actor-ID
+          in: header
+          required: true
+          schema: { type: string, minLength: 1 }
+        - name: X-Actor-Role
+          in: header
+          required: true
+          schema: { $ref: '#/components/schemas/ReviewActorRole' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewDecision' }
+      responses:
+        '200': { description: Decision recorded; response states whether the gate completed }
+        '403': { description: Role cannot perform this decision }
+        '404': { description: Review task not found }
+        '409': { description: Task completed or actor already decided }
+        '422': { description: Invalid decision or missing reason/limitations }
 components:
   schemas:
     IngestionEnvelope:
@@ -89,3 +117,18 @@ components:
         source_grade: { enum: [S1, S2, S3, S4, S5, S6] }
         authority_scope: { type: array, items: { type: string }, default: [] }
         languages: { type: array, items: { type: string }, default: [] }
+    ReviewActorRole:
+      enum: [reviewer, senior_reviewer, publisher, security_compliance]
+    ReviewDecision:
+      type: object
+      additionalProperties: false
+      required: [action, reason]
+      properties:
+        action:
+          enum: [approve, approve_with_limits, return_for_fix, reject, quarantine]
+        reason: { type: string, minLength: 8, maxLength: 2000 }
+        rule_version: { type: string, default: review-v1.0 }
+        limitations:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 500 }

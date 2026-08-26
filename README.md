@@ -67,7 +67,9 @@ pnpm dev:admin
 
 Local API docs are at `http://localhost:8000/docs`; the review console is at
 `http://localhost:3001`. Register a candidate source through `POST /v1/admin/sources`, then
-submit evidence through `POST /v1/ingestion/records` using contract version 1.1.
+submit evidence through `POST /v1/ingestion/records` using contract version 1.1. Local human
+review decisions use `POST /v1/admin/review-tasks/{reviewTaskId}/decisions`; production review
+writes remain disabled until a real identity provider is configured.
 
 ## Documentation
 

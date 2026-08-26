@@ -37,6 +37,8 @@ class DocumentVersionRecord:
 def merge_l2_publication_status(current: str, incoming: L2PublicationStatus) -> str:
     if current == "quarantined" or incoming == "quarantined":
         return "quarantined"
+    if current == "rejected":
+        return incoming
     l2_order = {"discovered": 0, "raw_only": 1, "staged": 2, "under_review": 3}
     if current not in l2_order:
         return current

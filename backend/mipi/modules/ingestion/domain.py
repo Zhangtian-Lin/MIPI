@@ -8,7 +8,12 @@ from mipi.modules.documents.domain import DocumentType, L2PublicationStatus
 
 CollectionRelevance = Literal["high", "medium", "low", "unknown"]
 FactLevel = Literal["F0", "F1", "F2", "F3", "F4"]
-ProcessingStatus = Literal["needs_review", "quarantined"]
+ProcessingStatus = Literal[
+    "needs_review", "in_review", "approved", "returned", "rejected", "quarantined"
+]
+CandidatePublicationStatus = Literal[
+    "raw_only", "staged", "under_review", "rejected", "quarantined"
+]
 RiskLevel = Literal["R0", "R1", "R2", "R3"]
 
 
@@ -36,6 +41,14 @@ class IngestionSubmission:
 
 
 @dataclass(frozen=True)
+class ReviewDecisionSummary:
+    actor_id: str
+    actor_role: str
+    action: str
+    created_at: str
+
+
+@dataclass(frozen=True)
 class IngestionRecord:
     internal_id: UUID
     public_id: str
@@ -50,12 +63,13 @@ class IngestionRecord:
     raw_object_uri: str
     collection_relevance: CollectionRelevance
     verification_hint: FactLevel | None
-    publication_status: L2PublicationStatus
+    publication_status: CandidatePublicationStatus
     processing_status: ProcessingStatus
     review_flags: tuple[str, ...]
     review_task_id: str
     review_status: str
     risk_level: RiskLevel
+    review_decisions: tuple[ReviewDecisionSummary, ...]
     created_at: datetime
 
 

@@ -14,6 +14,9 @@ from mipi.modules.ingestion.infrastructure import PostgresIngestionRepository
 from mipi.modules.sources.api import create_source_router
 from mipi.modules.sources.application import SourceService
 from mipi.modules.sources.infrastructure import PostgresSourceRepository
+from mipi.modules.verification.api import create_review_router
+from mipi.modules.verification.application import ReviewService
+from mipi.modules.verification.infrastructure import PostgresReviewRepository
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -48,6 +51,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(create_source_router(sources))
     app.include_router(create_ingestion_router(ingestion))
+    app.include_router(
+        create_review_router(
+            ReviewService(PostgresReviewRepository(settings.database_url)),
+            local_review_enabled=settings.env == "local",
+        )
+    )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(

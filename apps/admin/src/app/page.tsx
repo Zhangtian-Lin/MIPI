@@ -1,18 +1,36 @@
 "use client";
 
 import { MipiClient } from "@mipi/sdk-ts";
-import type { IngestionCandidateVM } from "@mipi/view-models";
-import { useEffect, useMemo, useState } from "react";
+import type {
+  IngestionCandidateVM,
+  ReviewActorRole,
+  ReviewDecisionAction,
+} from "@mipi/view-models";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const statusLabels = {
   needs_review: "待审核",
+  in_review: "审核中",
+  approved: "已接收入库",
+  returned: "已退回",
+  rejected: "已拒绝",
   quarantined: "已隔离",
 } as const;
+
+const roleLabels: Record<ReviewActorRole, string> = {
+  reviewer: "Reviewer",
+  senior_reviewer: "Senior Reviewer",
+  publisher: "Publisher",
+  security_compliance: "Security / Compliance",
+};
 
 export default function AdminHome() {
   const [records, setRecords] = useState<IngestionCandidateVM[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [actorId, setActorId] = useState("local-reviewer-1");
+  const [actorRole, setActorRole] = useState<ReviewActorRole>("reviewer");
   const client = useMemo(
     () =>
       new MipiClient({
@@ -21,25 +39,65 @@ export default function AdminHome() {
     [],
   );
 
-  useEffect(() => {
-    let active = true;
-    client
-      .listIngestionCandidates({ limit: 100 })
-      .then((data) => {
-        if (active) setRecords(data);
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "无法读取审核队列");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+  const loadRecords = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setRecords(await client.listIngestionCandidates({ limit: 100 }));
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "无法读取审核队列");
+    } finally {
+      setLoading(false);
+    }
   }, [client]);
 
-  const reviewCount = records.filter((item) => item.processing_status === "needs_review").length;
+  useEffect(() => {
+    void loadRecords();
+  }, [loadRecords]);
+
+  const decide = async (item: IngestionCandidateVM, action: ReviewDecisionAction) => {
+    if (
+      ["reject", "quarantine"].includes(action) &&
+      !window.confirm("这项决定会终止当前审核任务，但不会删除原文和审计记录。继续吗？")
+    ) {
+      return;
+    }
+    const reason = window.prompt("请输入审核理由（至少 8 个字符）：");
+    if (!reason) return;
+    if (reason.trim().length < 8) {
+      setError("审核理由至少需要 8 个字符。");
+      return;
+    }
+    let limitations: string[] = [];
+    if (action === "approve_with_limits") {
+      const value = window.prompt("请输入限制条件；多项请用分号分隔：");
+      limitations = value?.split(/[;；]/).map((part) => part.trim()).filter(Boolean) ?? [];
+      if (limitations.length === 0) {
+        setError("限制通过必须填写至少一项限制条件。");
+        return;
+      }
+    }
+    setBusy(item.review.review_task_id);
+    setError(null);
+    try {
+      await client.decideReviewTask(item.review.review_task_id, {
+        actorId,
+        actorRole,
+        action,
+        reason,
+        limitations,
+      });
+      await loadRecords();
+    } catch (reasonValue: unknown) {
+      setError(reasonValue instanceof Error ? reasonValue.message : "审核决定提交失败");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reviewCount = records.filter((item) =>
+    ["needs_review", "in_review"].includes(item.processing_status),
+  ).length;
   const quarantinedCount = records.filter(
     (item) => item.processing_status === "quarantined",
   ).length;
@@ -78,7 +136,28 @@ export default function AdminHome() {
             <p className="eyebrow">REVIEW QUEUE</p>
             <h2>最新候选</h2>
           </div>
-          <span className="refresh-state">{loading ? "正在同步…" : "已同步"}</span>
+          <button className="refresh" disabled={loading} onClick={() => void loadRecords()}>
+            {loading ? "正在同步…" : "刷新队列"}
+          </button>
+        </div>
+
+        <div className="reviewer-bar">
+          <label>
+            审核人 ID
+            <input value={actorId} onChange={(event) => setActorId(event.target.value)} />
+          </label>
+          <label>
+            本地测试角色
+            <select
+              value={actorRole}
+              onChange={(event) => setActorRole(event.target.value as ReviewActorRole)}
+            >
+              {Object.entries(roleLabels).map(([role, label]) => (
+                <option key={role} value={role}>{label}</option>
+              ))}
+            </select>
+          </label>
+          <p>生产环境在接入身份系统前禁用审核写入；这里的角色选择仅供本地验证。</p>
         </div>
 
         {error ? <div className="notice error">API 暂不可用：{error}</div> : null}
@@ -104,11 +183,30 @@ export default function AdminHome() {
                 <p className="ids">
                   {item.ingestion_id} · {item.document_id} · v{item.version_number}
                 </p>
+                {["queued", "in_review"].includes(item.review.status) ? (
+                  <div className="actions">
+                    <button disabled={busy === item.review.review_task_id} onClick={() => void decide(item, "approve")}>通过</button>
+                    <button disabled={busy === item.review.review_task_id} onClick={() => void decide(item, "approve_with_limits")}>限制通过</button>
+                    <button disabled={busy === item.review.review_task_id} onClick={() => void decide(item, "return_for_fix")}>退回</button>
+                    <button className="danger" disabled={busy === item.review.review_task_id} onClick={() => void decide(item, "reject")}>拒绝</button>
+                    <button className="danger" disabled={busy === item.review.review_task_id} onClick={() => void decide(item, "quarantine")}>隔离</button>
+                  </div>
+                ) : null}
               </div>
               <div className="candidate-side">
                 <span>{new Date(item.created_at).toLocaleString("zh-CN")}</span>
                 <strong>{item.collection_relevance}</strong>
                 <p>{item.review_flags.length ? item.review_flags.join(" · ") : "无自动标记"}</p>
+                {item.review.decisions.length ? (
+                  <div className="decision-history">
+                    <strong>已有决定</strong>
+                    {item.review.decisions.map((decision) => (
+                      <span key={`${decision.actor_id}-${decision.created_at}`}>
+                        {roleLabels[decision.actor_role]} · {decision.action} · {decision.actor_id}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </article>
           ))}

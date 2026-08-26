@@ -13,8 +13,25 @@ export interface ImportantChangeCardVM {
   locations: string[];
 }
 
-export type IngestionProcessingStatus = "needs_review" | "quarantined";
+export type IngestionProcessingStatus =
+  | "needs_review"
+  | "in_review"
+  | "approved"
+  | "returned"
+  | "rejected"
+  | "quarantined";
 export type ReviewRiskLevel = "R0" | "R1" | "R2" | "R3";
+export type ReviewActorRole =
+  | "reviewer"
+  | "senior_reviewer"
+  | "publisher"
+  | "security_compliance";
+export type ReviewDecisionAction =
+  | "approve"
+  | "approve_with_limits"
+  | "return_for_fix"
+  | "reject"
+  | "quarantine";
 
 export interface IngestionCandidateVM {
   ingestion_id: string;
@@ -31,13 +48,30 @@ export interface IngestionCandidateVM {
   raw_object_uri: string;
   collection_relevance: "high" | "medium" | "low" | "unknown";
   verification_hint: FactLevel | null;
-  publication_status: "raw_only" | "staged" | "under_review" | "quarantined";
+  publication_status: "raw_only" | "staged" | "under_review" | "rejected" | "quarantined";
   processing_status: IngestionProcessingStatus;
   review_flags: string[];
   review: {
     review_task_id: string;
     status: string;
     risk_level: ReviewRiskLevel;
+    decisions: Array<{
+      actor_id: string;
+      actor_role: ReviewActorRole;
+      action: ReviewDecisionAction;
+      created_at: string;
+    }>;
   };
   created_at: string;
+}
+
+export interface ReviewDecisionResultVM {
+  review_task_id: string;
+  ingestion_id: string;
+  task_status: string;
+  processing_status: IngestionProcessingStatus;
+  publication_status: IngestionCandidateVM["publication_status"];
+  risk_level: ReviewRiskLevel;
+  decision_count: number;
+  completed: boolean;
 }

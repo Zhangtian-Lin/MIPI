@@ -29,6 +29,7 @@ async def _run_flow() -> None:
     digest = hashlib.sha256(content.encode()).hexdigest()
     object_name = f"raw/{source_id}/{digest[:2]}/{digest}.txt"
     ingestion_id: str | None = None
+    review_task_id: str | None = None
 
     transport = httpx.ASGITransport(app=create_app(settings))
     try:
@@ -71,6 +72,7 @@ async def _run_flow() -> None:
             assert first.status_code == 200, first.text
             first_body = first.json()
             ingestion_id = first_body["data"]["ingestion_id"]
+            review_task_id = first_body["data"]["review"]["review_task_id"]
             assert first_body["meta"]["duplicate"] is False
             assert first_body["data"]["processing_status"] == "needs_review"
             assert first_body["data"]["canonical_url"].endswith("/article")
@@ -83,6 +85,40 @@ async def _run_flow() -> None:
             detail = await client.get(f"/v1/admin/ingestion-records/{ingestion_id}")
             assert detail.status_code == 200, detail.text
             assert detail.json()["data"]["review"]["status"] == "queued"
+
+            review = await client.post(
+                f"/v1/admin/review-tasks/{review_task_id}/decisions",
+                headers={"X-Actor-ID": f"reviewer-{token}", "X-Actor-Role": "reviewer"},
+                json={
+                    "action": "approve",
+                    "reason": "Synthetic evidence and source were checked.",
+                    "rule_version": "integration-v1",
+                },
+            )
+            assert review.status_code == 200, review.text
+            assert review.json()["data"]["task_status"] == "approved"
+            assert review.json()["data"]["publication_status"] == "staged"
+            assert review.json()["data"]["completed"] is True
+
+            repeated_review = await client.post(
+                f"/v1/admin/review-tasks/{review_task_id}/decisions",
+                headers={"X-Actor-ID": f"reviewer-{token}", "X-Actor-Role": "reviewer"},
+                json={
+                    "action": "approve",
+                    "reason": "Synthetic evidence and source were checked again.",
+                },
+            )
+            assert repeated_review.status_code == 409
+            assert repeated_review.json()["error"]["code"] == "REVIEW_CONFLICT"
+
+            reviewed_detail = await client.get(
+                f"/v1/admin/ingestion-records/{ingestion_id}"
+            )
+            assert reviewed_detail.status_code == 200, reviewed_detail.text
+            reviewed_data = reviewed_detail.json()["data"]
+            assert reviewed_data["processing_status"] == "approved"
+            assert reviewed_data["publication_status"] == "staged"
+            assert len(reviewed_data["review"]["decisions"]) == 1
 
         minio = Minio(
             settings.object_storage_endpoint.removeprefix("http://").removeprefix("https://"),
@@ -108,11 +144,15 @@ async def _run_flow() -> None:
             assert version_count is not None
             assert version_count["count"] == 1
     finally:
-        _cleanup(settings, source_id, ingestion_id, object_name)
+        _cleanup(settings, source_id, ingestion_id, review_task_id, object_name)
 
 
 def _cleanup(
-    settings: Settings, source_id: str, ingestion_id: str | None, object_name: str
+    settings: Settings,
+    source_id: str,
+    ingestion_id: str | None,
+    review_task_id: str | None,
+    object_name: str,
 ) -> None:
     minio = Minio(
         settings.object_storage_endpoint.removeprefix("http://").removeprefix("https://"),
@@ -140,6 +180,21 @@ def _cleanup(
             ).fetchone()
         if ingestion is not None:
             connection.execute("DELETE FROM outbox WHERE aggregate_id = %s", (ingestion["id"],))
+            review_task = connection.execute(
+                """
+                SELECT id FROM review_tasks
+                WHERE object_type = 'ingestion_record' AND object_id = %s
+                """,
+                (ingestion["id"],),
+            ).fetchone()
+            if review_task is not None:
+                connection.execute(
+                    "DELETE FROM outbox WHERE aggregate_id = %s", (review_task["id"],)
+                )
+                connection.execute(
+                    "DELETE FROM review_decisions WHERE review_task_id = %s",
+                    (review_task["id"],),
+                )
             connection.execute(
                 """
                 DELETE FROM review_tasks
@@ -150,6 +205,8 @@ def _cleanup(
             connection.execute("DELETE FROM ingestion_records WHERE id = %s", (ingestion["id"],))
         if ingestion_id is not None:
             connection.execute("DELETE FROM audit_log WHERE object_id = %s", (ingestion_id,))
+        if review_task_id is not None:
+            connection.execute("DELETE FROM audit_log WHERE object_id = %s", (review_task_id,))
         for document_id in document_ids:
             connection.execute(
                 "DELETE FROM document_versions WHERE document_id = %s", (document_id,)
