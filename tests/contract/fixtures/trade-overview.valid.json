@@ -1,0 +1,59 @@
+{
+  "publication_id": "TIP-00000000-0000-0000-0000-000000000001",
+  "revision": 1,
+  "published_at": "2026-08-26T08:00:00Z",
+  "dataset_id": "trade_sitc_1d",
+  "title": "马来西亚月度货物贸易（SITC 一位数）",
+  "unit": "RM million",
+  "latest_period": "2026-06-01",
+  "provisional_periods": ["2026-05-01", "2026-06-01"],
+  "latest": {
+    "exports_rm_million": 100,
+    "imports_rm_million": 90,
+    "balance_rm_million": 10,
+    "exports_mom_percent": 1.2,
+    "imports_mom_percent": null
+  },
+  "timeline": [
+    { "period": "2025-07-01", "exports_rm_million": 90, "imports_rm_million": 80, "balance_rm_million": 10, "provisional": false },
+    { "period": "2025-08-01", "exports_rm_million": 91, "imports_rm_million": 81, "balance_rm_million": 10, "provisional": false },
+    { "period": "2025-09-01", "exports_rm_million": 92, "imports_rm_million": 82, "balance_rm_million": 10, "provisional": false },
+    { "period": "2025-10-01", "exports_rm_million": 93, "imports_rm_million": 83, "balance_rm_million": 10, "provisional": false },
+    { "period": "2025-11-01", "exports_rm_million": 94, "imports_rm_million": 84, "balance_rm_million": 10, "provisional": false },
+    { "period": "2025-12-01", "exports_rm_million": 95, "imports_rm_million": 85, "balance_rm_million": 10, "provisional": false },
+    { "period": "2026-01-01", "exports_rm_million": 96, "imports_rm_million": 86, "balance_rm_million": 10, "provisional": false },
+    { "period": "2026-02-01", "exports_rm_million": 97, "imports_rm_million": 87, "balance_rm_million": 10, "provisional": false },
+    { "period": "2026-03-01", "exports_rm_million": 98, "imports_rm_million": 88, "balance_rm_million": 10, "provisional": false },
+    { "period": "2026-04-01", "exports_rm_million": 99, "imports_rm_million": 89, "balance_rm_million": 10, "provisional": false },
+    { "period": "2026-05-01", "exports_rm_million": 99, "imports_rm_million": 90, "balance_rm_million": 9, "provisional": true },
+    { "period": "2026-06-01", "exports_rm_million": 100, "imports_rm_million": 90, "balance_rm_million": 10, "provisional": true }
+  ],
+  "sections": [
+    { "section": "0", "label_zh": "食品及活动物", "exports_rm_million": 1, "imports_rm_million": 1, "balance_rm_million": 0 },
+    { "section": "1", "label_zh": "饮料及烟草", "exports_rm_million": 2, "imports_rm_million": 1, "balance_rm_million": 1 },
+    { "section": "2", "label_zh": "非食用原料（燃料除外）", "exports_rm_million": 3, "imports_rm_million": 2, "balance_rm_million": 1 },
+    { "section": "3", "label_zh": "矿物燃料、润滑油及相关材料", "exports_rm_million": 4, "imports_rm_million": 3, "balance_rm_million": 1 },
+    { "section": "4", "label_zh": "动植物油、脂及蜡", "exports_rm_million": 5, "imports_rm_million": 4, "balance_rm_million": 1 },
+    { "section": "5", "label_zh": "化学品及相关产品", "exports_rm_million": 6, "imports_rm_million": 5, "balance_rm_million": 1 },
+    { "section": "6", "label_zh": "按原料分类的制成品", "exports_rm_million": 7, "imports_rm_million": 6, "balance_rm_million": 1 },
+    { "section": "7", "label_zh": "机械及运输设备", "exports_rm_million": 8, "imports_rm_million": 7, "balance_rm_million": 1 },
+    { "section": "8", "label_zh": "杂项制成品", "exports_rm_million": 9, "imports_rm_million": 8, "balance_rm_million": 1 },
+    { "section": "9", "label_zh": "其他未分类商品", "exports_rm_million": 10, "imports_rm_million": 9, "balance_rm_million": 1 }
+  ],
+  "fact_level": "F4",
+  "caveats": ["最近两个月数据为暂定值，后续更新可能修订。"],
+  "evidence": {
+    "source_id": "SRC-MY-DATAGOV",
+    "source_name": "Malaysia Official Open Data Portal",
+    "source_grade": "S2",
+    "ingestion_id": "ING-00000000-0000-0000-0000-000000000001",
+    "document_id": "DOC-00000000-0000-0000-0000-000000000001",
+    "document_version": 1,
+    "canonical_url": "https://api.data.gov.my/data-catalogue?id=trade_sitc_1d",
+    "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "crawled_at": "2026-08-26T07:00:00Z",
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Government of Malaysia / data.gov.my"
+  }
+}

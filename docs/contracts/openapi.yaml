@@ -5,6 +5,65 @@ info:
 servers:
   - url: /v1
 paths:
+  /trade/overview:
+    get:
+      operationId: getTradeOverview
+      description: Return only the current human-published L4 trade projection, or null.
+      responses:
+        '200':
+          description: Current published trade overview or an empty data field
+  /admin/trade-indicators/project:
+    post:
+      operationId: projectTradeIndicators
+      description: Normalize one approved L2 data.gov.my ingestion into a private L3 batch.
+      parameters:
+        - name: X-Actor-ID
+          in: header
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: X-Actor-Role
+          in: header
+          required: true
+          schema: { enum: [processing_agent, system_admin] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TradeProjectionRequest' }
+      responses:
+        '200': { description: Private L3 trade batch created or returned idempotently }
+        '409': { description: L2 review is incomplete }
+        '422': { description: Dataset or official field contract is invalid }
+  /admin/trade-indicators/{batchId}/publish:
+    post:
+      operationId: publishTradeIndicators
+      description: Human Publisher creates a versioned L4 projection from a complete F4 batch.
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^TIB-' }
+        - name: X-Actor-ID
+          in: header
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: X-Actor-Role
+          in: header
+          required: true
+          schema: { const: publisher }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 500 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TradePublicationRequest' }
+      responses:
+        '200': { description: Published trade overview }
+        '409': { description: Publication conflict or reused idempotency key }
+        '422': { description: Batch is incomplete or not publication-ready }
   /changes:
     get:
       operationId: listChanges
@@ -134,8 +193,24 @@ paths:
         '422': { description: Invalid decision or missing reason/limitations }
 components:
   schemas:
+    TradeOverview:
+      $ref: './schemas/trade-overview.schema.json'
+    TradeProjectionRequest:
+      type: object
+      additionalProperties: false
+      required: [ingestion_id]
+      properties:
+        ingestion_id: { type: string, pattern: '^ING-' }
+        rule_version: { type: string, default: trade-sitc-v1.0, maxLength: 100 }
+    TradePublicationRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 8, maxLength: 2000 }
+        rule_version: { type: string, default: trade-publication-v1.0, maxLength: 100 }
     IngestionEnvelope:
-      $ref: './ingestion-envelope.schema.json'
+      $ref: './schemas/ingestion-envelope.schema.json'
     SourceRegistration:
       type: object
       additionalProperties: false

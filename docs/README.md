@@ -39,6 +39,7 @@
 | 文档 | 状态 | 负责人角色 |
 |---|---|---|
 | `product/MVP需求与验收标准.md` | draft | Product Owner |
+| `product/贸易指标首条数据闭环.md` | draft | Product / Data Owner |
 | `data/数据字典与状态机规范.md` | draft | Data Steward |
 | `data/来源注册与评级规范.md` | draft | Source Admin |
 | `data/分类体系与术语规范.md` | draft | Data Steward |

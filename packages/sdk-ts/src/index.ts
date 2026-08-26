@@ -8,6 +8,8 @@ import type {
   SourceDecisionAction,
   SourceRegistrationDraftVM,
   SourceVM,
+  TradeBatchVM,
+  TradeOverviewVM,
 } from "@mipi/view-models";
 
 export interface MipiClientOptions {
@@ -26,6 +28,59 @@ export class MipiClient {
 
   async listChanges(): Promise<unknown> {
     return this.get("/changes");
+  }
+
+  async getTradeOverview(): Promise<TradeOverviewVM | null> {
+    const response = await this.get<ApiEnvelope<TradeOverviewVM | null>>("/trade/overview");
+    return response.data;
+  }
+
+  async projectTradeIndicators(
+    ingestionId: string,
+    actorId: string,
+    ruleVersion = "trade-sitc-v1.0",
+  ): Promise<TradeBatchVM> {
+    const response = await this.request<ApiEnvelope<TradeBatchVM>>(
+      "/admin/trade-indicators/project",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Actor-ID": actorId,
+          "X-Actor-Role": "processing_agent",
+        },
+        body: JSON.stringify({ ingestion_id: ingestionId, rule_version: ruleVersion }),
+      },
+    );
+    return response.data;
+  }
+
+  async publishTradeIndicators(
+    batchId: string,
+    decision: {
+      actorId: string;
+      idempotencyKey: string;
+      reason: string;
+      ruleVersion?: string;
+    },
+  ): Promise<TradeOverviewVM> {
+    const response = await this.request<ApiEnvelope<TradeOverviewVM>>(
+      `/admin/trade-indicators/${encodeURIComponent(batchId)}/publish`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Actor-ID": decision.actorId,
+          "X-Actor-Role": "publisher",
+          "Idempotency-Key": decision.idempotencyKey,
+        },
+        body: JSON.stringify({
+          reason: decision.reason,
+          rule_version: decision.ruleVersion ?? "trade-publication-v1.0",
+        }),
+      },
+    );
+    return response.data;
   }
 
   async listIngestionCandidates(options: {

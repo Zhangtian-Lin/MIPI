@@ -81,6 +81,11 @@ source-gated and dry-run by default; see
 `docs/agents/data.gov.my首个采集连接器运行规范.md`. No collection is attempted until
 `SRC-MY-DATAGOV` has entered `trial` or `active` through the source-governance workflow.
 
+The first public vertical slice is the governed `trade_sitc_1d` overview. An approved L2
+ingestion can be normalized into a private L3 trade batch; only a human Publisher can create
+the versioned L4 projection returned by `GET /v1/trade/overview`. See
+`docs/product/贸易指标首条数据闭环.md`.
+
 ## Documentation
 
 Start with [docs/README.md](docs/README.md). All production-affecting documents are currently drafts and require review before autonomous collection or public release.

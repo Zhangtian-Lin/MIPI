@@ -65,6 +65,24 @@ class ReviewPermissionError(Exception):
     pass
 
 
+def fact_level_for_official_trade_dataset(
+    *,
+    source_id: str,
+    source_grade: str,
+    dataset_id: str,
+    ingestion_status: str,
+    verification_hint: str | None,
+) -> str:
+    """Resolve the narrow deterministic F rule for reviewed DOSM trade records."""
+    if ingestion_status != "approved":
+        raise ValueError("Only an approved L2 ingestion can enter L3 verification")
+    if source_id != "SRC-MY-DATAGOV" or source_grade != "S2":
+        raise ValueError("Official trade verification requires the registered data.gov.my source")
+    if dataset_id != "trade_sitc_1d" or verification_hint != "F4":
+        raise ValueError("The ingestion is not eligible for the official trade F4 rule")
+    return "F4"
+
+
 def resolve_workflow(
     *,
     current_status: str,

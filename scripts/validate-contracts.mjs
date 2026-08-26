@@ -18,6 +18,9 @@ const runReportFixturePath = fromRoot(
 );
 const openApiPath = fromRoot("packages/contracts/openapi.yaml");
 const docsOpenApiPath = fromRoot("docs/contracts/openapi.yaml");
+const tradeSchemaPath = fromRoot("packages/contracts/schemas/trade-overview.schema.json");
+const docsTradeSchemaPath = fromRoot("docs/contracts/trade-overview.schema.json");
+const tradeFixturePath = fromRoot("tests/contract/fixtures/trade-overview.valid.json");
 const schemaText = readFileSync(schemaPath, "utf8");
 const docsSchemaText = readFileSync(docsSchemaPath, "utf8");
 const schema = JSON.parse(schemaText);
@@ -28,6 +31,10 @@ const runReportSchema = JSON.parse(runReportSchemaText);
 const runReportFixture = JSON.parse(readFileSync(runReportFixturePath, "utf8"));
 const openApi = readFileSync(openApiPath, "utf8");
 const docsOpenApi = readFileSync(docsOpenApiPath, "utf8");
+const tradeSchemaText = readFileSync(tradeSchemaPath, "utf8");
+const docsTradeSchemaText = readFileSync(docsTradeSchemaPath, "utf8");
+const tradeSchema = JSON.parse(tradeSchemaText);
+const tradeFixture = JSON.parse(readFileSync(tradeFixturePath, "utf8"));
 
 if (schemaText !== docsSchemaText) {
   throw new Error("Published and documented ingestion schemas differ");
@@ -35,9 +42,13 @@ if (schemaText !== docsSchemaText) {
 if (runReportSchemaText !== docsRunReportSchemaText) {
   throw new Error("Published and documented collection run report schemas differ");
 }
+if (tradeSchemaText !== docsTradeSchemaText) {
+  throw new Error("Published and documented trade overview schemas differ");
+}
 
 validateRequiredAndUnknown(schema, fixture, "ingestion fixture");
 validateRequiredAndUnknown(runReportSchema, runReportFixture, "collection run report fixture");
+validateRequiredAndUnknown(tradeSchema, tradeFixture, "trade overview fixture");
 
 if (!schema.properties.contract_version.enum.includes(fixture.contract_version)) {
   throw new Error("Unsupported contract_version");
@@ -58,6 +69,14 @@ if (
 ) {
   throw new Error("Collection run report fixture must describe one successful dry run");
 }
+if (
+  tradeFixture.dataset_id !== "trade_sitc_1d" ||
+  tradeFixture.fact_level !== "F4" ||
+  tradeFixture.timeline.length !== 12 ||
+  tradeFixture.sections.length !== 10
+) {
+  throw new Error("Trade overview fixture does not satisfy the V1 publication shape");
+}
 
 for (const content of [openApi, docsOpenApi]) {
   if (!content.includes("operationId: submitIngestionRecord")) {
@@ -68,6 +87,9 @@ for (const content of [openApi, docsOpenApi]) {
   }
   if (!content.includes("operationId: decideSourceLifecycle")) {
     throw new Error("OpenAPI is missing the source lifecycle operation");
+  }
+  if (!content.includes("operationId: getTradeOverview")) {
+    throw new Error("OpenAPI is missing the public trade overview operation");
   }
 }
 

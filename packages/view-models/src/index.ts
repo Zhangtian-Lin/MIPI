@@ -118,3 +118,59 @@ export interface SourceVM {
   review_due_at: string | null;
   access_notes: string | null;
 }
+
+export interface TradeOverviewVM {
+  publication_id: string;
+  revision: number;
+  published_at: string;
+  dataset_id: "trade_sitc_1d";
+  title: string;
+  unit: "RM million";
+  latest_period: string;
+  provisional_periods: string[];
+  latest: {
+    exports_rm_million: number;
+    imports_rm_million: number;
+    balance_rm_million: number;
+    exports_mom_percent: number | null;
+    imports_mom_percent: number | null;
+  };
+  timeline: Array<{
+    period: string;
+    exports_rm_million: number;
+    imports_rm_million: number;
+    balance_rm_million: number;
+    provisional: boolean;
+  }>;
+  sections: Array<{
+    section: string;
+    label_zh: string;
+    exports_rm_million: number;
+    imports_rm_million: number;
+    balance_rm_million: number;
+  }>;
+  fact_level: "F4";
+  caveats: string[];
+  evidence: {
+    source_id: string;
+    source_name: string;
+    source_grade: "S2";
+    ingestion_id: string;
+    document_id: string;
+    document_version: number;
+    canonical_url: string;
+    content_hash: string;
+    crawled_at: string;
+    license: string | null;
+    license_url: string | null;
+    attribution: string | null;
+  };
+}
+
+export interface TradeBatchVM {
+  batch_id: string;
+  ingestion_id: string;
+  dataset_id: "trade_sitc_1d";
+  status: "canonical_private" | "published" | "rejected";
+  observation_count: number;
+}
