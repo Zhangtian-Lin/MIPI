@@ -61,6 +61,7 @@ def test_generated_openapi_includes_ingestion_and_admin_routes() -> None:
     assert "/v1/admin/ingestion-records" in paths
     assert "/v1/admin/review-tasks/{review_task_id}/decisions" in paths
     assert "/v1/admin/trade-indicators/project" in paths
+    assert "/v1/admin/trade-indicators/workbench" in paths
     assert "/v1/admin/trade-indicators/{batch_id}/publish" in paths
     assert "/v1/trade/overview" in paths
 
@@ -122,6 +123,23 @@ def test_production_rejects_header_only_trade_processing_identity() -> None:
     response = asyncio.run(run())
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "PROCESSING_AUTH_NOT_CONFIGURED"
+
+
+def test_production_rejects_header_only_trade_workbench_identity() -> None:
+    async def run() -> httpx.Response:
+        transport = httpx.ASGITransport(app=create_app(Settings(env="production")))
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get(
+                "/v1/admin/trade-indicators/workbench",
+                headers={
+                    "X-Actor-ID": "processing-agent-test",
+                    "X-Actor-Role": "processing_agent",
+                },
+            )
+
+    response = asyncio.run(run())
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "TRADE_WORKBENCH_AUTH_NOT_CONFIGURED"
 
 
 def test_production_rejects_header_only_trade_publisher_identity() -> None:

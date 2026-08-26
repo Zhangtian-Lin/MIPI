@@ -12,6 +12,25 @@ paths:
       responses:
         '200':
           description: Current published trade overview or an empty data field
+  /admin/trade-indicators/workbench:
+    get:
+      operationId: getTradeWorkbench
+      description: List approved official L2 trade ingestions and private L3 batch readiness for authorized operators.
+      parameters:
+        - name: X-Actor-ID
+          in: header
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: X-Actor-Role
+          in: header
+          required: true
+          schema: { enum: [processing_agent, publisher, system_admin] }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        '200': { description: Eligible L2 records and L3 publication-readiness summaries }
+        '503': { description: Operator identity provider is not configured }
   /admin/trade-indicators/project:
     post:
       operationId: projectTradeIndicators

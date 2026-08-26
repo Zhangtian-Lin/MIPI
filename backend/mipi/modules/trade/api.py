@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from mipi.modules.trade.application import TradeService
@@ -37,6 +37,52 @@ def create_trade_router(
     local_publication_enabled: bool,
 ) -> APIRouter:
     router = APIRouter(tags=["trade-indicators"])
+
+    @router.get("/v1/admin/trade-indicators/workbench")
+    def get_trade_workbench(
+        x_actor_id: Annotated[str, Header(min_length=1, max_length=200)],
+        x_actor_role: Annotated[Literal["processing_agent", "publisher", "system_admin"], Header()],
+        limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    ) -> dict[str, object]:
+        if not local_processing_enabled:
+            raise _error(
+                503,
+                "TRADE_WORKBENCH_AUTH_NOT_CONFIGURED",
+                "Production trade workbench access requires an identity provider.",
+            )
+        workbench = service.workbench(limit=limit)
+        return _response(
+            {
+                "eligible_ingestions": [
+                    {
+                        "ingestion_id": item.ingestion_id,
+                        "document_id": item.document_id,
+                        "canonical_url": item.canonical_url,
+                        "content_hash": item.content_hash,
+                        "created_at": item.created_at,
+                        "projected": item.projected,
+                    }
+                    for item in workbench.eligible_ingestions
+                ],
+                "batches": [
+                    {
+                        "batch_id": item.batch_id,
+                        "ingestion_id": item.ingestion_id,
+                        "status": item.status,
+                        "fact_level": item.fact_level,
+                        "observation_count": item.observation_count,
+                        "period_start": item.period_start,
+                        "period_end": item.period_end,
+                        "publication_ready": item.publication_ready,
+                        "blockers": list(item.blockers),
+                        "publication_id": item.publication_id,
+                        "revision": item.revision,
+                        "created_at": item.created_at,
+                    }
+                    for item in workbench.batches
+                ],
+            }
+        )
 
     @router.post("/v1/admin/trade-indicators/project")
     def project_trade_batch(

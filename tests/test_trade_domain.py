@@ -2,7 +2,11 @@ import json
 from datetime import date
 
 import pytest
-from mipi.modules.trade.domain import build_trade_overview, normalize_trade_payload
+from mipi.modules.trade.domain import (
+    build_trade_overview,
+    normalize_trade_payload,
+    trade_publication_blockers,
+)
 from mipi.modules.verification.domain import fact_level_for_official_trade_dataset
 
 
@@ -52,6 +56,26 @@ def test_build_trade_overview_requires_complete_latest_month() -> None:
         )
 
 
+def test_trade_readiness_reports_independent_timeline_and_section_blockers() -> None:
+    observations = normalize_trade_payload(
+        json.dumps(
+            [
+                {
+                    "date": "2025-12-01",
+                    "section": "overall",
+                    "exports": 112,
+                    "imports": 102,
+                }
+            ]
+        )
+    )
+
+    blockers = trade_publication_blockers(observations)
+
+    assert any("at least 12" in blocker for blocker in blockers)
+    assert any("missing sections" in blocker for blocker in blockers)
+
+
 def test_build_trade_overview_rejects_a_gap_in_the_public_timeline() -> None:
     rows = [
         {
@@ -63,9 +87,7 @@ def test_build_trade_overview_rejects_a_gap_in_the_public_timeline() -> None:
         for month in range(1, 13)
         if month != 6
     ]
-    rows.append(
-        {"date": "2026-01-01", "section": "overall", "exports": 113, "imports": 103}
-    )
+    rows.append({"date": "2026-01-01", "section": "overall", "exports": 113, "imports": 103})
     for section in range(10):
         rows.append(
             {

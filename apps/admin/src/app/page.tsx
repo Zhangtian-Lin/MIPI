@@ -12,6 +12,7 @@ import type {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SourceRegistrationForm } from "./source-registration-form";
 import { SourceTrialApprovalForm } from "./source-trial-approval-form";
+import { TradePublicationWorkbench } from "./trade-publication-workbench";
 
 const statusLabels = {
   needs_review: "待审核",
@@ -350,6 +351,15 @@ export default function AdminHome() {
             );
           })}
         </div>
+
+        <div className="queue-heading trade-heading">
+          <div>
+            <p className="eyebrow">TRADE PUBLICATION</p>
+            <h2>贸易指标工作台</h2>
+          </div>
+          <span className="refresh-state">L2 → L3 → L4</span>
+        </div>
+        <TradePublicationWorkbench client={client} />
       </section>
     </main>
   );

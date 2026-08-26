@@ -71,6 +71,38 @@ class TradePublication:
     duplicate: bool
 
 
+@dataclass(frozen=True)
+class EligibleTradeIngestion:
+    ingestion_id: str
+    document_id: str
+    canonical_url: str
+    content_hash: str
+    created_at: str
+    projected: bool
+
+
+@dataclass(frozen=True)
+class TradeBatchSummary:
+    batch_id: str
+    ingestion_id: str
+    status: str
+    fact_level: str
+    observation_count: int
+    period_start: str
+    period_end: str
+    publication_ready: bool
+    blockers: tuple[str, ...]
+    publication_id: str | None
+    revision: int | None
+    created_at: str
+
+
+@dataclass(frozen=True)
+class TradeWorkbench:
+    eligible_ingestions: tuple[EligibleTradeIngestion, ...]
+    batches: tuple[TradeBatchSummary, ...]
+
+
 class TradeIngestionNotFoundError(Exception):
     pass
 
@@ -126,29 +158,19 @@ def build_trade_overview(
     *,
     evidence: dict[str, object],
 ) -> dict[str, object]:
+    blockers = trade_publication_blockers(observations)
+    if blockers:
+        raise ValueError(blockers[0])
     overall = sorted(
         (item for item in observations if item.section == "overall"),
         key=lambda item: item.period,
     )
-    if len(overall) < 12:
-        raise ValueError("Publication requires at least 12 monthly overall observations")
-    if any(
-        _next_month(previous.period) != current.period
-        for previous, current in pairwise(overall[-12:])
-    ):
-        raise ValueError("Publication requires 12 consecutive monthly overall observations")
     latest = overall[-1]
     latest_sections: dict[DetailedSITCSection, TradeObservation] = {
         item.section: item
         for item in observations
         if item.period == latest.period and item.section != "overall"
     }
-    missing = [section for section in DETAILED_SITC_SECTIONS if section not in latest_sections]
-    if missing:
-        raise ValueError(
-            "Publication requires a complete latest SITC month; missing sections: "
-            + ", ".join(missing)
-        )
     previous = overall[-2]
     return {
         "dataset_id": DATASET_ID,
@@ -181,6 +203,38 @@ def build_trade_overview(
         "caveats": ["最近两个月数据为暂定值，后续更新可能修订。"],
         "evidence": evidence,
     }
+
+
+def trade_publication_blockers(
+    observations: tuple[TradeObservation, ...],
+) -> tuple[str, ...]:
+    overall = sorted(
+        (item for item in observations if item.section == "overall"),
+        key=lambda item: item.period,
+    )
+    blockers: list[str] = []
+    if len(overall) < 12:
+        blockers.append("Publication requires at least 12 monthly overall observations")
+    if not overall:
+        return tuple(blockers)
+    if len(overall) >= 12 and any(
+        _next_month(previous.period) != current.period
+        for previous, current in pairwise(overall[-12:])
+    ):
+        blockers.append("Publication requires 12 consecutive monthly overall observations")
+    latest_period = overall[-1].period
+    present = {
+        item.section
+        for item in observations
+        if item.period == latest_period and item.section != "overall"
+    }
+    missing = [section for section in DETAILED_SITC_SECTIONS if section not in present]
+    if missing:
+        blockers.append(
+            "Publication requires a complete latest SITC month; missing sections: "
+            + ", ".join(missing)
+        )
+    return tuple(blockers)
 
 
 def _metric_payload(current: TradeObservation, previous: TradeObservation) -> dict[str, object]:

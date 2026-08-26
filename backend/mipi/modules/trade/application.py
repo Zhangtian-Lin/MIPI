@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from mipi.modules.trade.domain import TradeBatch, TradePublication
+from mipi.modules.trade.domain import TradeBatch, TradePublication, TradeWorkbench
 
 
 class TradeRepository(Protocol):
@@ -17,6 +17,8 @@ class TradeRepository(Protocol):
     ) -> TradePublication: ...
 
     def current_overview(self) -> TradePublication | None: ...
+
+    def workbench(self, *, limit: int) -> TradeWorkbench: ...
 
 
 class TradeService:
@@ -47,3 +49,6 @@ class TradeService:
 
     def current_overview(self) -> TradePublication | None:
         return self._repository.current_overview()
+
+    def workbench(self, *, limit: int = 100) -> TradeWorkbench:
+        return self._repository.workbench(limit=limit)

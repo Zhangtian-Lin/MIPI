@@ -6,15 +6,20 @@ from psycopg.types.json import Jsonb
 
 from mipi.modules.trade.domain import (
     DATASET_ID,
+    EligibleTradeIngestion,
     TradeBatch,
     TradeBatchNotFoundError,
+    TradeBatchSummary,
     TradeIngestionNotApprovedError,
     TradeIngestionNotFoundError,
+    TradeObservation,
     TradeProjectionConflictError,
     TradePublication,
     TradePublicationConflictError,
+    TradeWorkbench,
     build_trade_overview,
     normalize_trade_payload,
+    trade_publication_blockers,
 )
 from mipi.modules.verification.domain import fact_level_for_official_trade_dataset
 from mipi.shared.database import open_database
@@ -314,6 +319,78 @@ class PostgresTradeRepository:
             ).fetchone()
         return None if row is None else self._to_publication(row, duplicate=False)
 
+    def workbench(self, *, limit: int) -> TradeWorkbench:
+        with open_database(self._database_url) as connection:
+            ingestion_rows = connection.execute(
+                """
+                SELECT ir.public_id, d.public_id AS document_public_id,
+                       ir.canonical_url, ir.content_hash, ir.created_at,
+                       EXISTS (
+                           SELECT 1 FROM trade_indicator_batches tib
+                           WHERE tib.ingestion_record_id = ir.id
+                       ) AS projected
+                FROM ingestion_records ir
+                JOIN sources s ON s.id = ir.source_id
+                JOIN documents d ON d.id = ir.document_id
+                WHERE ir.processing_status = 'approved'
+                  AND s.public_id = 'SRC-MY-DATAGOV'
+                  AND ir.submitted_payload->'metadata'->>'dataset_id' = %s
+                ORDER BY ir.created_at DESC
+                LIMIT %s
+                """,
+                (DATASET_ID, limit),
+            ).fetchall()
+            batch_rows = connection.execute(
+                """
+                SELECT tib.*, ir.public_id AS ingestion_public_id,
+                       tip.public_id AS publication_public_id, tip.revision
+                FROM trade_indicator_batches tib
+                JOIN ingestion_records ir ON ir.id = tib.ingestion_record_id
+                LEFT JOIN trade_indicator_publications tip ON tip.batch_id = tib.id
+                ORDER BY tib.created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            ).fetchall()
+            summaries: list[TradeBatchSummary] = []
+            for row in batch_rows:
+                observations = self._observations_for_batch(connection, row["id"])
+                blockers = list(trade_publication_blockers(observations))
+                if row["fact_level"] != "F4":
+                    blockers.append("Publication requires F4 verification")
+                if row["status"] == "published":
+                    blockers.append("Batch is already published")
+                summaries.append(
+                    TradeBatchSummary(
+                        batch_id=cast(str, row["public_id"]),
+                        ingestion_id=cast(str, row["ingestion_public_id"]),
+                        status=cast(str, row["status"]),
+                        fact_level=cast(str, row["fact_level"]),
+                        observation_count=cast(int, row["observation_count"]),
+                        period_start=observations[0].period.isoformat(),
+                        period_end=observations[-1].period.isoformat(),
+                        publication_ready=not blockers,
+                        blockers=tuple(blockers),
+                        publication_id=cast(str | None, row["publication_public_id"]),
+                        revision=cast(int | None, row["revision"]),
+                        created_at=row["created_at"].isoformat(),
+                    )
+                )
+        return TradeWorkbench(
+            eligible_ingestions=tuple(
+                EligibleTradeIngestion(
+                    ingestion_id=cast(str, row["public_id"]),
+                    document_id=cast(str, row["document_public_id"]),
+                    canonical_url=cast(str, row["canonical_url"]),
+                    content_hash=cast(str, row["content_hash"]),
+                    created_at=row["created_at"].isoformat(),
+                    projected=cast(bool, row["projected"]),
+                )
+                for row in ingestion_rows
+            ),
+            batches=tuple(summaries),
+        )
+
     @staticmethod
     def _metadata(row: dict[str, Any]) -> dict[str, object]:
         payload = row["submitted_payload"]
@@ -372,6 +449,32 @@ class PostgresTradeRepository:
             "license_url": metadata.get("license_url"),
             "attribution": metadata.get("attribution"),
         }
+
+    @staticmethod
+    def _observations_for_batch(
+        connection: Any, batch_internal_id: object
+    ) -> tuple[TradeObservation, ...]:
+        return normalize_trade_payload(
+            json.dumps(
+                [
+                    {
+                        "date": item["period"].isoformat(),
+                        "section": item["sitc_section"],
+                        "exports": str(item["exports_rm_million"]),
+                        "imports": str(item["imports_rm_million"]),
+                    }
+                    for item in connection.execute(
+                        """
+                        SELECT period, sitc_section, exports_rm_million, imports_rm_million
+                        FROM trade_indicator_observations
+                        WHERE batch_id = %s
+                        ORDER BY period, sitc_section
+                        """,
+                        (batch_internal_id,),
+                    ).fetchall()
+                ]
+            )
+        )
 
     @staticmethod
     def _to_publication(row: dict[str, Any], *, duplicate: bool) -> TradePublication:

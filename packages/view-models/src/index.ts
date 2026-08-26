@@ -174,3 +174,28 @@ export interface TradeBatchVM {
   status: "canonical_private" | "published" | "rejected";
   observation_count: number;
 }
+
+export interface TradeWorkbenchVM {
+  eligible_ingestions: Array<{
+    ingestion_id: string;
+    document_id: string;
+    canonical_url: string;
+    content_hash: string;
+    created_at: string;
+    projected: boolean;
+  }>;
+  batches: Array<{
+    batch_id: string;
+    ingestion_id: string;
+    status: TradeBatchVM["status"];
+    fact_level: FactLevel;
+    observation_count: number;
+    period_start: string;
+    period_end: string;
+    publication_ready: boolean;
+    blockers: string[];
+    publication_id: string | null;
+    revision: number | null;
+    created_at: string;
+  }>;
+}

@@ -91,6 +91,9 @@ for (const content of [openApi, docsOpenApi]) {
   if (!content.includes("operationId: getTradeOverview")) {
     throw new Error("OpenAPI is missing the public trade overview operation");
   }
+  if (!content.includes("operationId: getTradeWorkbench")) {
+    throw new Error("OpenAPI is missing the trade workbench operation");
+  }
 }
 
 console.log("MIPI contract fixture OK");

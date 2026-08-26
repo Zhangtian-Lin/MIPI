@@ -10,6 +10,7 @@ import type {
   SourceVM,
   TradeBatchVM,
   TradeOverviewVM,
+  TradeWorkbenchVM,
 } from "@mipi/view-models";
 
 export interface MipiClientOptions {
@@ -50,6 +51,20 @@ export class MipiClient {
           "X-Actor-Role": "processing_agent",
         },
         body: JSON.stringify({ ingestion_id: ingestionId, rule_version: ruleVersion }),
+      },
+    );
+    return response.data;
+  }
+
+  async getTradeWorkbench(actorId: string, limit = 100): Promise<TradeWorkbenchVM> {
+    const response = await this.request<ApiEnvelope<TradeWorkbenchVM>>(
+      `/admin/trade-indicators/workbench?limit=${encodeURIComponent(String(limit))}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "X-Actor-ID": actorId,
+          "X-Actor-Role": "processing_agent",
+        },
       },
     );
     return response.data;
