@@ -36,7 +36,8 @@ F 值只是采集阶段建议，最终状态由 Verification 决定。
 ## 4. 本地运行
 
 先由来源管理员在管理端“登记候选来源”区域载入 data.gov.my 候选并登记，随后由有权人员
-根据试采证据完成试运行批准。登记不等于批准，Agent 不得代替人工执行任一决策。再启动 API：
+在来源卡片的“审核试运行”表单中逐项确认身份、条款、权威范围与 robots 结论，并记录核验
+依据和审批理由。登记不等于批准，Agent 不得代替人工勾选或执行任一决定。再启动 API：
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn mipi.bootstrap.app:create_app --factory

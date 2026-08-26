@@ -11,6 +11,7 @@ import type {
 } from "@mipi/view-models";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SourceRegistrationForm } from "./source-registration-form";
+import { SourceTrialApprovalForm } from "./source-trial-approval-form";
 
 const statusLabels = {
   needs_review: "待审核",
@@ -125,37 +126,6 @@ export default function AdminHome() {
     let robotsStatus: RobotsStatus | undefined;
     let accessNotes: string | undefined;
     let evidenceUrls: string[] = [];
-    let identityVerified = false;
-    let termsReviewed = false;
-    let authorityScopeReviewed = false;
-    if (action === "approve_for_trial") {
-      if (
-        !window.confirm(
-          "确认你已经核验来源身份、访问条款和权威范围，并将为这些判断负责？",
-        )
-      ) {
-        return;
-      }
-      const robotsInput = window.prompt(
-        "请输入 robots 结论：allowed、limited 或 not_applicable",
-        source.robots_status === "unknown" ? "allowed" : source.robots_status,
-      );
-      if (!robotsInput || !["allowed", "limited", "not_applicable"].includes(robotsInput)) {
-        setError("robots 结论必须是 allowed、limited 或 not_applicable。");
-        return;
-      }
-      robotsStatus = robotsInput as RobotsStatus;
-      if (robotsStatus === "limited") {
-        accessNotes = window.prompt("请说明允许访问的路径、频率和限制：") ?? undefined;
-        if (!accessNotes?.trim()) {
-          setError("limited 状态必须填写访问限制。");
-          return;
-        }
-      }
-      identityVerified = true;
-      termsReviewed = true;
-      authorityScopeReviewed = true;
-    }
     if (action === "activate") {
       const evidenceInput = window.prompt("请输入试采证据 URL；多项使用逗号分隔：");
       evidenceUrls = evidenceInput?.split(/[,，]/).map((item) => item.trim()).filter(Boolean) ?? [];
@@ -183,9 +153,6 @@ export default function AdminHome() {
         robotsStatus,
         accessNotes,
         evidenceUrls,
-        identityVerified,
-        termsReviewed,
-        authorityScopeReviewed,
       });
       await loadRecords();
     } catch (reasonValue: unknown) {
@@ -324,6 +291,7 @@ export default function AdminHome() {
             来源管理员 ID
             <input
               value={sourceActorId}
+              maxLength={200}
               onChange={(event) => setSourceActorId(event.target.value)}
             />
           </label>
@@ -356,7 +324,12 @@ export default function AdminHome() {
                 <div className="source-actions">
                   {source.status === "candidate" ? (
                     <>
-                      <button disabled={busy === busyKey} onClick={() => void decideSource(source, "approve_for_trial")}>批准试运行</button>
+                      <SourceTrialApprovalForm
+                        actorId={sourceActorId}
+                        client={client}
+                        source={source}
+                        onApproved={async () => loadRecords()}
+                      />
                       <button className="danger" disabled={busy === busyKey} onClick={() => void decideSource(source, "retire")}>不采用</button>
                     </>
                   ) : null}

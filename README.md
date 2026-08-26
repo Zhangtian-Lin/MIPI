@@ -68,7 +68,9 @@ pnpm dev:admin
 Local API docs are at `http://localhost:8000/docs`; the review console is at
 `http://localhost:3001`. A source administrator can register a candidate in the console, or
 through `POST /v1/admin/sources`, then submit evidence through `POST /v1/ingestion/records`
-using contract version 1.1. Registration does not approve trial collection. Local human
+using contract version 1.1. Registration does not approve trial collection. The candidate card
+provides a structured human-only trial approval form for identity, terms, authority scope,
+robots status, evidence links, and an audited reason. Local human
 review decisions use `POST /v1/admin/review-tasks/{reviewTaskId}/decisions`; production review
 writes remain disabled until a real identity provider is configured. Source lifecycle decisions
 use `POST /v1/admin/sources/{sourceId}/decisions`; regular scheduled collection is allowed only

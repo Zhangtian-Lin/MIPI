@@ -195,12 +195,53 @@ h1 {
 }
 .source-actions button:first-child { color: #fff; background: var(--accent); border-color: var(--accent); }
 .source-actions button.danger { color: var(--danger); background: #fff; border-color: #d9aaa1; }
+.source-actions button:disabled { cursor: not-allowed; opacity: .55; }
+.trial-approval-form {
+  display: grid;
+  gap: 13px;
+  min-width: min(320px, 32vw);
+  padding: 16px;
+  background: #f7f6f1;
+  border: 1px solid var(--line);
+}
+.trial-approval-heading, .trial-approval-footer {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.trial-approval-form > p, .trial-approval-footer span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.trial-approval-form > label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.trial-approval-form select, .trial-approval-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  font: inherit;
+  resize: vertical;
+}
+.approval-checklist { display: grid; gap: 8px; }
+.approval-checklist label { display: flex; gap: 8px; align-items: start; font-size: 12px; }
+.approval-checklist input { margin: 1px 0 0; }
+.trial-approval-form .primary-action { color: #fff; background: var(--accent); border-color: var(--accent); }
+.trial-approval-heading button { color: var(--ink); background: #fff; border-color: var(--line); }
 .badge.source-active { color: #fff; background: var(--accent); }
 .badge.source-degraded, .badge.source-inactive { color: #795817; background: #f3e9cb; }
 .badge.source-retired { color: var(--muted); background: #e4e4df; }
-button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
   outline: 3px solid #8cc5b2;
   outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .source-list { grid-template-columns: 1fr; }
+  .trial-approval-form { min-width: min(440px, 48vw); }
 }
 
 @media (max-width: 800px) {
@@ -214,4 +255,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .source-registration-heading, .source-registration-footer { align-items: stretch; flex-direction: column; }
   .source-card { grid-template-columns: 1fr; }
   .source-actions { flex-direction: row; flex-wrap: wrap; }
+  .trial-approval-form { min-width: 0; width: 100%; }
+  .trial-approval-heading, .trial-approval-footer { align-items: stretch; flex-direction: column; }
 }
