@@ -49,7 +49,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         documents=documents,
         repository=PostgresIngestionRepository(settings.database_url),
     )
-    app.include_router(create_source_router(sources))
+    app.include_router(
+        create_source_router(sources, local_admin_enabled=settings.env == "local")
+    )
     app.include_router(create_ingestion_router(ingestion))
     app.include_router(
         create_review_router(

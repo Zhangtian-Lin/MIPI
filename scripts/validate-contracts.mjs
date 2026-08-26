@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const schemaPath = "packages/contracts/schemas/ingestion-envelope.schema.json";
-const docsSchemaPath = "docs/contracts/ingestion-envelope.schema.json";
-const fixturePath = "tests/contract/fixtures/ingestion-envelope.valid.json";
-const openApiPath = "packages/contracts/openapi.yaml";
-const docsOpenApiPath = "docs/contracts/openapi.yaml";
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const fromRoot = (path) => resolve(repositoryRoot, path);
+const schemaPath = fromRoot("packages/contracts/schemas/ingestion-envelope.schema.json");
+const docsSchemaPath = fromRoot("docs/contracts/ingestion-envelope.schema.json");
+const fixturePath = fromRoot("tests/contract/fixtures/ingestion-envelope.valid.json");
+const openApiPath = fromRoot("packages/contracts/openapi.yaml");
+const docsOpenApiPath = fromRoot("docs/contracts/openapi.yaml");
 const schemaText = readFileSync(schemaPath, "utf8");
 const docsSchemaText = readFileSync(docsSchemaPath, "utf8");
 const schema = JSON.parse(schemaText);
@@ -47,6 +51,9 @@ for (const content of [openApi, docsOpenApi]) {
   }
   if (!content.includes("operationId: decideReviewTask")) {
     throw new Error("OpenAPI is missing the review decision operation");
+  }
+  if (!content.includes("operationId: decideSourceLifecycle")) {
+    throw new Error("OpenAPI is missing the source lifecycle operation");
   }
 }
 

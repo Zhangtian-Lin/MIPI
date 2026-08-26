@@ -134,10 +134,39 @@ h1 {
 .decision-history { display: grid; gap: 5px; margin-top: 18px; }
 .decision-history strong { margin: 0; font-size: 12px; }
 .decision-history span { overflow-wrap: anywhere; }
+.source-heading { margin-top: 80px; }
+.source-admin-bar { grid-template-columns: minmax(240px, 1fr) 2fr; }
+.source-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.source-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.source-card h3 { margin: 14px 0 8px; }
+.source-card a { color: var(--accent); overflow-wrap: anywhere; }
+.source-card p { color: var(--muted); font-size: 13px; }
+.source-actions { display: flex; flex-direction: column; gap: 8px; min-width: 100px; }
+.source-actions button {
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.source-actions button:first-child { color: #fff; background: var(--accent); border-color: var(--accent); }
+.source-actions button.danger { color: var(--danger); background: #fff; border-color: #d9aaa1; }
+.badge.source-active { color: #fff; background: var(--accent); }
+.badge.source-degraded, .badge.source-inactive { color: #795817; background: #f3e9cb; }
+.badge.source-retired { color: var(--muted); background: #e4e4df; }
 
 @media (max-width: 800px) {
   .metrics { grid-template-columns: 1fr; }
   .reviewer-bar { grid-template-columns: 1fr; }
   .candidate { grid-template-columns: 1fr; }
   .candidate-side { text-align: left; }
+  .source-list { grid-template-columns: 1fr; }
+  .source-card { grid-template-columns: 1fr; }
+  .source-actions { flex-direction: row; flex-wrap: wrap; }
 }

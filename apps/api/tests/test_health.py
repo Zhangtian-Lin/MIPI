@@ -57,6 +57,7 @@ def test_generated_openapi_includes_ingestion_and_admin_routes() -> None:
 
     assert "/v1/ingestion/records" in paths
     assert "/v1/admin/sources" in paths
+    assert "/v1/admin/sources/{source_id}/decisions" in paths
     assert "/v1/admin/ingestion-records" in paths
     assert "/v1/admin/review-tasks/{review_task_id}/decisions" in paths
 
@@ -74,3 +75,29 @@ def test_production_rejects_header_only_review_identity() -> None:
     response = asyncio.run(run())
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "REVIEW_AUTH_NOT_CONFIGURED"
+
+
+def test_production_rejects_header_only_source_admin_identity() -> None:
+    async def run() -> httpx.Response:
+        transport = httpx.ASGITransport(app=create_app(Settings(env="production")))
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.post(
+                "/v1/admin/sources/SRC-test/decisions",
+                headers={
+                    "X-Actor-ID": "source-admin-test",
+                    "X-Actor-Role": "source_admin",
+                    "Idempotency-Key": "source-admin-production-test",
+                },
+                json={
+                    "action": "approve_for_trial",
+                    "reason": "Identity and access conditions were checked.",
+                    "identity_verified": True,
+                    "terms_reviewed": True,
+                    "authority_scope_reviewed": True,
+                    "robots_status": "allowed",
+                },
+            )
+
+    response = asyncio.run(run())
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "SOURCE_ADMIN_AUTH_NOT_CONFIGURED"

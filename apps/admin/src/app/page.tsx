@@ -3,8 +3,11 @@
 import { MipiClient } from "@mipi/sdk-ts";
 import type {
   IngestionCandidateVM,
+  RobotsStatus,
   ReviewActorRole,
   ReviewDecisionAction,
+  SourceDecisionAction,
+  SourceVM,
 } from "@mipi/view-models";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -24,13 +27,24 @@ const roleLabels: Record<ReviewActorRole, string> = {
   security_compliance: "Security / Compliance",
 };
 
+const sourceStatusLabels: Record<SourceVM["status"], string> = {
+  candidate: "候选",
+  trial: "试运行",
+  active: "已激活",
+  degraded: "已降级",
+  inactive: "已停用",
+  retired: "已退役",
+};
+
 export default function AdminHome() {
   const [records, setRecords] = useState<IngestionCandidateVM[]>([]);
+  const [sources, setSources] = useState<SourceVM[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [actorId, setActorId] = useState("local-reviewer-1");
   const [actorRole, setActorRole] = useState<ReviewActorRole>("reviewer");
+  const [sourceActorId, setSourceActorId] = useState("local-source-admin-1");
   const client = useMemo(
     () =>
       new MipiClient({
@@ -43,7 +57,12 @@ export default function AdminHome() {
     setLoading(true);
     setError(null);
     try {
-      setRecords(await client.listIngestionCandidates({ limit: 100 }));
+      const [candidateData, sourceData] = await Promise.all([
+        client.listIngestionCandidates({ limit: 100 }),
+        client.listSources(100),
+      ]);
+      setRecords(candidateData);
+      setSources(sourceData);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "无法读取审核队列");
     } finally {
@@ -90,6 +109,86 @@ export default function AdminHome() {
       await loadRecords();
     } catch (reasonValue: unknown) {
       setError(reasonValue instanceof Error ? reasonValue.message : "审核决定提交失败");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const decideSource = async (source: SourceVM, action: SourceDecisionAction) => {
+    if (
+      ["degrade", "deactivate", "retire"].includes(action) &&
+      !window.confirm("该操作会限制或停止自动采集，但不会删除来源和历史。继续吗？")
+    ) {
+      return;
+    }
+    let robotsStatus: RobotsStatus | undefined;
+    let accessNotes: string | undefined;
+    let evidenceUrls: string[] = [];
+    let identityVerified = false;
+    let termsReviewed = false;
+    let authorityScopeReviewed = false;
+    if (action === "approve_for_trial") {
+      if (
+        !window.confirm(
+          "确认你已经核验来源身份、访问条款和权威范围，并将为这些判断负责？",
+        )
+      ) {
+        return;
+      }
+      const robotsInput = window.prompt(
+        "请输入 robots 结论：allowed、limited 或 not_applicable",
+        source.robots_status === "unknown" ? "allowed" : source.robots_status,
+      );
+      if (!robotsInput || !["allowed", "limited", "not_applicable"].includes(robotsInput)) {
+        setError("robots 结论必须是 allowed、limited 或 not_applicable。");
+        return;
+      }
+      robotsStatus = robotsInput as RobotsStatus;
+      if (robotsStatus === "limited") {
+        accessNotes = window.prompt("请说明允许访问的路径、频率和限制：") ?? undefined;
+        if (!accessNotes?.trim()) {
+          setError("limited 状态必须填写访问限制。");
+          return;
+        }
+      }
+      identityVerified = true;
+      termsReviewed = true;
+      authorityScopeReviewed = true;
+    }
+    if (action === "activate") {
+      const evidenceInput = window.prompt("请输入试采证据 URL；多项使用逗号分隔：");
+      evidenceUrls = evidenceInput?.split(/[,，]/).map((item) => item.trim()).filter(Boolean) ?? [];
+      if (evidenceUrls.length === 0) {
+        setError("正式激活必须提供至少一个试采证据 URL。");
+        return;
+      }
+      robotsStatus = source.robots_status;
+    }
+    const reason = window.prompt("请输入来源治理理由（至少 8 个字符）：");
+    if (!reason) return;
+    if (reason.trim().length < 8) {
+      setError("来源治理理由至少需要 8 个字符。");
+      return;
+    }
+    const busyKey = `source:${source.source_id}`;
+    setBusy(busyKey);
+    setError(null);
+    try {
+      await client.decideSource(source.source_id, {
+        actorId: sourceActorId,
+        idempotencyKey: crypto.randomUUID(),
+        action,
+        reason,
+        robotsStatus,
+        accessNotes,
+        evidenceUrls,
+        identityVerified,
+        termsReviewed,
+        authorityScopeReviewed,
+      });
+      await loadRecords();
+    } catch (reasonValue: unknown) {
+      setError(reasonValue instanceof Error ? reasonValue.message : "来源决定提交失败");
     } finally {
       setBusy(null);
     }
@@ -210,6 +309,66 @@ export default function AdminHome() {
               </div>
             </article>
           ))}
+        </div>
+
+        <div className="queue-heading source-heading">
+          <div>
+            <p className="eyebrow">SOURCE GOVERNANCE</p>
+            <h2>来源注册表</h2>
+          </div>
+          <span className="refresh-state">{sources.length} 个来源</span>
+        </div>
+        <div className="reviewer-bar source-admin-bar">
+          <label>
+            来源管理员 ID
+            <input
+              value={sourceActorId}
+              onChange={(event) => setSourceActorId(event.target.value)}
+            />
+          </label>
+          <p>候选来源先进入小流量试采；正式激活必须补充试采证据。</p>
+        </div>
+        <div className="source-list">
+          {sources.map((source) => {
+            const busyKey = `source:${source.source_id}`;
+            return (
+              <article className="source-card" key={source.source_id}>
+                <div>
+                  <div className="badges">
+                    <span className={`badge source-${source.status}`}>
+                      {sourceStatusLabels[source.status]}
+                    </span>
+                    <span className="badge neutral">{source.source_grade}</span>
+                    <span className="badge neutral">robots: {source.robots_status}</span>
+                  </div>
+                  <h3>{source.name}</h3>
+                  <a href={source.base_url} rel="noreferrer" target="_blank">{source.base_url}</a>
+                  <p>{source.owner} · {source.languages.join(" / ") || "语言未登记"}</p>
+                  <p className="ids">{source.source_id} · {source.crawl_status}</p>
+                </div>
+                <div className="source-actions">
+                  {source.status === "candidate" ? (
+                    <>
+                      <button disabled={busy === busyKey} onClick={() => void decideSource(source, "approve_for_trial")}>批准试运行</button>
+                      <button className="danger" disabled={busy === busyKey} onClick={() => void decideSource(source, "retire")}>不采用</button>
+                    </>
+                  ) : null}
+                  {["trial", "degraded", "inactive"].includes(source.status) ? (
+                    <button disabled={busy === busyKey} onClick={() => void decideSource(source, "activate")}>激活</button>
+                  ) : null}
+                  {source.status === "active" ? (
+                    <button disabled={busy === busyKey} onClick={() => void decideSource(source, "degrade")}>降级</button>
+                  ) : null}
+                  {["trial", "active", "degraded"].includes(source.status) ? (
+                    <button className="danger" disabled={busy === busyKey} onClick={() => void decideSource(source, "deactivate")}>停用</button>
+                  ) : null}
+                  {source.status === "inactive" ? (
+                    <button className="danger" disabled={busy === busyKey} onClick={() => void decideSource(source, "retire")}>退役</button>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
     </main>

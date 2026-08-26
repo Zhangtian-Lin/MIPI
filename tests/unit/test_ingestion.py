@@ -32,6 +32,12 @@ class FakeSources:
             languages=("en",),
             status="candidate",
             crawl_status="pending_terms_review",
+            robots_status="unknown",
+            terms_reviewed_at=None,
+            identity_verified_at=None,
+            last_reviewed_at=None,
+            review_due_at=None,
+            access_notes=None,
         )
 
     def get(self, public_id: str) -> SourceRecord:

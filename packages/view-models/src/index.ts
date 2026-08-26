@@ -75,3 +75,36 @@ export interface ReviewDecisionResultVM {
   decision_count: number;
   completed: boolean;
 }
+
+export type SourceLifecycleStatus =
+  | "candidate"
+  | "trial"
+  | "active"
+  | "degraded"
+  | "inactive"
+  | "retired";
+export type RobotsStatus = "unknown" | "allowed" | "limited" | "disallowed" | "not_applicable";
+export type SourceDecisionAction =
+  | "approve_for_trial"
+  | "activate"
+  | "degrade"
+  | "deactivate"
+  | "retire";
+
+export interface SourceVM {
+  source_id: string;
+  name: string;
+  owner: string;
+  base_url: string;
+  source_grade: SourceGrade;
+  authority_scope: string[];
+  languages: string[];
+  status: SourceLifecycleStatus;
+  crawl_status: string;
+  robots_status: RobotsStatus;
+  terms_reviewed_at: string | null;
+  identity_verified_at: string | null;
+  last_reviewed_at: string | null;
+  review_due_at: string | null;
+  access_notes: string | null;
+}

@@ -48,6 +48,64 @@ async def _run_flow() -> None:
             )
             assert source_response.status_code == 200, source_response.text
 
+            source_headers = {
+                "X-Actor-ID": f"source-admin-{token}",
+                "X-Actor-Role": "source_admin",
+            }
+            trial_payload = {
+                "action": "approve_for_trial",
+                "reason": "Synthetic identity, scope, terms, and robots rules were checked.",
+                "identity_verified": True,
+                "terms_reviewed": True,
+                "authority_scope_reviewed": True,
+                "robots_status": "allowed",
+                "access_notes": "Synthetic integration source only.",
+            }
+            trial_headers = {**source_headers, "Idempotency-Key": f"trial-{token}"}
+            trial = await client.post(
+                f"/v1/admin/sources/{source_id}/decisions",
+                headers=trial_headers,
+                json=trial_payload,
+            )
+            assert trial.status_code == 200, trial.text
+            assert trial.json()["data"]["source"]["status"] == "trial"
+
+            duplicate_trial = await client.post(
+                f"/v1/admin/sources/{source_id}/decisions",
+                headers=trial_headers,
+                json=trial_payload,
+            )
+            assert duplicate_trial.status_code == 200, duplicate_trial.text
+            assert duplicate_trial.json()["meta"]["duplicate"] is True
+            assert duplicate_trial.json()["data"]["decision_id"] == trial.json()["data"][
+                "decision_id"
+            ]
+
+            conflicting_trial = await client.post(
+                f"/v1/admin/sources/{source_id}/decisions",
+                headers=trial_headers,
+                json={**trial_payload, "reason": "A conflicting retry reason was supplied."},
+            )
+            assert conflicting_trial.status_code == 409
+            assert (
+                conflicting_trial.json()["error"]["code"]
+                == "SOURCE_DECISION_IDEMPOTENCY_CONFLICT"
+            )
+
+            activation = await client.post(
+                f"/v1/admin/sources/{source_id}/decisions",
+                headers={**source_headers, "Idempotency-Key": f"activate-{token}"},
+                json={
+                    "action": "activate",
+                    "reason": "Synthetic trial retrieval completed successfully.",
+                    "robots_status": "allowed",
+                    "evidence_urls": [f"https://{token}.example.test/trial-sample"],
+                },
+            )
+            assert activation.status_code == 200, activation.text
+            assert activation.json()["data"]["source"]["status"] == "active"
+            assert activation.json()["data"]["source"]["crawl_status"] == "approved"
+
             payload = {
                 "contract_version": "1.1",
                 "task_id": f"integration-{token}",
@@ -75,6 +133,8 @@ async def _run_flow() -> None:
             review_task_id = first_body["data"]["review"]["review_task_id"]
             assert first_body["meta"]["duplicate"] is False
             assert first_body["data"]["processing_status"] == "needs_review"
+            assert first_body["data"]["review"]["risk_level"] == "R0"
+            assert "source_registration_pending" not in first_body["data"]["review_flags"]
             assert first_body["data"]["canonical_url"].endswith("/article")
 
             duplicate = await client.post("/v1/ingestion/records", json=payload)
@@ -169,6 +229,8 @@ def _cleanup(
         ).fetchone()
         if source is None:
             return
+        connection.execute("DELETE FROM outbox WHERE aggregate_id = %s", (source["id"],))
+        connection.execute("DELETE FROM source_decisions WHERE source_id = %s", (source["id"],))
         documents = connection.execute(
             "SELECT id FROM documents WHERE source_id = %s", (source["id"],)
         ).fetchall()

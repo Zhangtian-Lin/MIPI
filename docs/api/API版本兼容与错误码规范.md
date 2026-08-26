@@ -32,6 +32,10 @@
 | REVIEW_PERMISSION_DENIED | 403 | 当前角色不能执行该审核决定 | 否 |
 | INVALID_REVIEW_DECISION | 422 | 理由、限制条件或状态不符合规则 | 否 |
 | REVIEW_AUTH_NOT_CONFIGURED | 503 | 生产审核身份系统尚未配置 | 是 |
+| SOURCE_TRANSITION_CONFLICT | 409 | 当前来源状态不允许所请求的转换 | 否 |
+| INVALID_SOURCE_DECISION | 422 | 来源检查、robots 或试采证据不满足门槛 | 否 |
+| SOURCE_ADMIN_AUTH_NOT_CONFIGURED | 503 | 当前环境未配置来源管理员身份系统 | 是 |
+| SOURCE_DECISION_IDEMPOTENCY_CONFLICT | 409 | 同一来源决定幂等键对应不同请求 | 否 |
 | UNAUTHORIZED | 401 | 未认证 | 条件 |
 | FORBIDDEN | 403 | 无权限 | 否 |
 | NOT_FOUND | 404 | 对象不存在 | 否 |

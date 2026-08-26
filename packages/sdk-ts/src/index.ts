@@ -4,6 +4,9 @@ import type {
   ReviewActorRole,
   ReviewDecisionAction,
   ReviewDecisionResultVM,
+  RobotsStatus,
+  SourceDecisionAction,
+  SourceVM,
 } from "@mipi/view-models";
 
 export interface MipiClientOptions {
@@ -66,6 +69,54 @@ export class MipiClient {
         }),
       },
     );
+    return response.data;
+  }
+
+  async listSources(limit = 100): Promise<SourceVM[]> {
+    const response = await this.get<ApiEnvelope<SourceVM[]>>(
+      `/admin/sources?limit=${encodeURIComponent(String(limit))}`,
+    );
+    return response.data;
+  }
+
+  async decideSource(
+    sourceId: string,
+    decision: {
+      actorId: string;
+      idempotencyKey: string;
+      action: SourceDecisionAction;
+      reason: string;
+      robotsStatus?: RobotsStatus;
+      identityVerified?: boolean;
+      termsReviewed?: boolean;
+      authorityScopeReviewed?: boolean;
+      evidenceUrls?: string[];
+      accessNotes?: string;
+      ruleVersion?: string;
+    },
+  ): Promise<{ decision_id: string; source: SourceVM }> {
+    const response = await this.request<
+      ApiEnvelope<{ decision_id: string; source: SourceVM }>
+    >(`/admin/sources/${encodeURIComponent(sourceId)}/decisions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Actor-ID": decision.actorId,
+        "X-Actor-Role": "source_admin",
+        "Idempotency-Key": decision.idempotencyKey,
+      },
+      body: JSON.stringify({
+        action: decision.action,
+        reason: decision.reason,
+        rule_version: decision.ruleVersion ?? "source-review-v1.0",
+        identity_verified: decision.identityVerified ?? false,
+        terms_reviewed: decision.termsReviewed ?? false,
+        authority_scope_reviewed: decision.authorityScopeReviewed ?? false,
+        robots_status: decision.robotsStatus,
+        evidence_urls: decision.evidenceUrls ?? [],
+        access_notes: decision.accessNotes,
+      }),
+    });
     return response.data;
   }
 
