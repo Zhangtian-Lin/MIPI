@@ -3,12 +3,26 @@ import { StatusBadge } from "@mipi/ui-web";
 import type { EventPublicationVM, TradeOverviewVM } from "@mipi/view-models";
 
 const industries = ["数据中心与 AI 基础设施", "半导体", "先进制造与新能源"];
+const industryFilters = [
+  ["data_centres_ai", "数据中心与 AI 基础设施"],
+  ["semiconductor", "半导体"],
+  ["advanced_manufacturing_new_energy", "先进制造与新能源"],
+] as const;
+const stateFilters = [["johor", "Johor"], ["penang", "Penang"], ["selangor", "Selangor"], ["kuala_lumpur", "Kuala Lumpur"]] as const;
+const typeFilters = [["investment", "投资"], ["project_update", "项目"], ["policy_update", "政策"], ["company_update", "企业"], ["tender", "招标"], ["governance_update", "治理"]] as const;
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const rawFilters = await searchParams;
+  const filters = {
+    industry: one(rawFilters.industry),
+    state: one(rawFilters.state),
+    eventType: one(rawFilters.event_type),
+  };
+  const hasFilters = Boolean(filters.industry || filters.state || filters.eventType);
   const tradeResult = await loadTradeOverview();
-  const changesResult = await loadChanges();
+  const changesResult = await loadChanges(filters);
   const trade = tradeResult.overview;
   return (
     <main>
@@ -47,6 +61,13 @@ export default async function HomePage() {
           <div><span className="eyebrow">TODAY</span><h2>今日重要变化</h2></div>
           <span className="muted">最多 10 条 · 只读取已发布 L4</span>
         </div>
+        <form className="change-filters" method="get" action="/#changes">
+          <label>产业<select name="industry" defaultValue={filters.industry ?? ""}><option value="">全部产业</option>{industryFilters.map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+          <label>州属<select name="state" defaultValue={filters.state ?? ""}><option value="">全部州属</option>{stateFilters.map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+          <label>事件类型<select name="event_type" defaultValue={filters.eventType ?? ""}><option value="">全部类型</option>{typeFilters.map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+          <button type="submit">应用筛选</button>
+          <a href="/#changes">清除</a>
+        </form>
         {changesResult.changes.length ? (
           <div className="change-list">
             {changesResult.changes.map((event) => <ChangeCard event={event} key={event.event_id} />)}
@@ -55,7 +76,9 @@ export default async function HomePage() {
           <div className={`empty-state${changesResult.unavailable ? " error-state" : ""}`}>
             {changesResult.unavailable
               ? "重要变化 API 暂时不可用；页面不会用私有候选代替正式事件。"
-              : "尚未收录可公开事件。真实数据必须经过来源、证据和 Publisher 发布流程。"}
+              : hasFilters
+                ? "当前筛选条件下没有已发布事件。"
+                : "尚未收录可公开事件。真实数据必须经过来源、证据和 Publisher 发布流程。"}
           </div>
         )}
       </section>
@@ -90,6 +113,7 @@ function ChangeCard({ event }: { event: EventPublicationVM }) {
       <div className="change-scopes">
         {[...event.industries, ...event.states].map((item) => <span key={item}>{item}</span>)}
       </div>
+      <a className="event-detail-link" href={`/events/${encodeURIComponent(event.event_id)}`}>查看事件详情 →</a>
       <details className="evidence-drawer">
         <summary>查看原文证据与来源</summary>
         <blockquote>{evidence.source_span.quote_zh}</blockquote>
@@ -247,16 +271,20 @@ async function loadTradeOverview(): Promise<{
   }
 }
 
-async function loadChanges(): Promise<{ changes: EventPublicationVM[]; unavailable: boolean }> {
+async function loadChanges(filters: { industry?: string; state?: string; eventType?: string }): Promise<{ changes: EventPublicationVM[]; unavailable: boolean }> {
   const client = new MipiClient({
     baseUrl: process.env.MIPI_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_MIPI_API_URL
       ?? "http://localhost:8000/v1",
   });
   try {
-    return { changes: await client.listChanges(), unavailable: false };
+    return { changes: await client.listChanges(filters), unavailable: false };
   } catch {
     return { changes: [], unavailable: true };
   }
+}
+
+function one(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function formatMoney(value: number): string {

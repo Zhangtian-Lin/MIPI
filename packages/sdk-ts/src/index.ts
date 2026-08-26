@@ -21,6 +21,13 @@ export interface MipiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+export class MipiApiError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "MipiApiError";
+  }
+}
+
 export class MipiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -30,8 +37,26 @@ export class MipiClient {
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
-  async listChanges(): Promise<EventPublicationVM[]> {
-    const response = await this.get<ApiEnvelope<EventPublicationVM[]>>("/changes");
+  async listChanges(options: {
+    industry?: string;
+    state?: string;
+    eventType?: string;
+    limit?: number;
+  } = {}): Promise<EventPublicationVM[]> {
+    const query = new URLSearchParams();
+    if (options.industry) query.set("industry", options.industry);
+    if (options.state) query.set("state", options.state);
+    if (options.eventType) query.set("event_type", options.eventType);
+    if (options.limit) query.set("limit", String(options.limit));
+    const suffix = query.size ? `?${query.toString()}` : "";
+    const response = await this.get<ApiEnvelope<EventPublicationVM[]>>(`/changes${suffix}`);
+    return response.data;
+  }
+
+  async getEvent(eventId: string): Promise<EventPublicationVM> {
+    const response = await this.get<ApiEnvelope<EventPublicationVM>>(
+      `/events/${encodeURIComponent(eventId)}`,
+    );
     return response.data;
   }
 
@@ -273,7 +298,7 @@ export class MipiClient {
       } catch {
         // The status remains useful when an upstream proxy returns a non-JSON error page.
       }
-      throw new Error(`MIPI API error: ${response.status}${detail}`);
+      throw new MipiApiError(response.status, `MIPI API error: ${response.status}${detail}`);
     }
     return response.json() as Promise<T>;
   }

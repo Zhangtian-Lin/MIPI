@@ -87,6 +87,19 @@ paths:
     get:
       operationId: listChanges
       description: List at most ten current human-published L4 events.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
+        - name: industry
+          in: query
+          schema: { type: string }
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: event_type
+          in: query
+          schema: { type: string }
       responses:
         '200': { description: Important changes }
   /events/{eventId}:
